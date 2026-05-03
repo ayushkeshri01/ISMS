@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  pin         String   @unique
+  name        String
+  role        String
+  department  String
+  companyKey  String?
+  isCustom    Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  company     Company? @relation(fields: [companyKey], references: [key])
+}
+
+model Company {
+  id                String              @id @default(cuid())
+  key               String              @unique
+  name              String
+  logo              String?
+  certificates      Certificate[]
+  complianceHistory ComplianceHistory[]
+  controls          Control[]
+  evidence          Evidence[]
+  users             User[]
+}
+
+model Control {
+  id          String     @id @default(cuid())
+  companyId   String
+  controlId   String
+  label       String
+  description String?
+  status      String     @default("NOT_STARTED")
+  category    String
+  subCategory String?
+  lastUpdated DateTime   @default(now())
+  updatedById String?
+  company     Company    @relation(fields: [companyId], references: [id])
+  evidence    Evidence[]
+
+  @@unique([companyId, controlId])
+}
+
+model Evidence {
+  id             String    @id @default(cuid())
+  controlId      String
+  companyId      String
+  filename       String
+  fileType       String
+  fileSize       Int
+  fileData       Bytes
+  evidenceType   String
+  status         String    @default("PENDING")
+  title          String?
+  referenceNo    String?
+  version        String?
+  uploadedById   String
+  uploadedByName String
+  reviewedById   String?
+  reviewedAt     DateTime?
+  reviewNote     String?
+  createdAt      DateTime  @default(now())
+  company        Company   @relation(fields: [companyId], references: [id])
+  control        Control   @relation(fields: [controlId], references: [id])
+}
+
+model Certificate {
+  id            String    @id @default(cuid())
+  companyId     String
+  isActive      Boolean   @default(false)
+  body          String
+  number        String
+  validFrom     DateTime
+  validTo       DateTime
+  scope         String
+  surveillance1 DateTime?
+  surveillance2 DateTime?
+  fileData      Bytes?
+  createdAt     DateTime  @default(now())
+  company       Company   @relation(fields: [companyId], references: [id])
+}
+
+model ActivityLog {
+  id           String   @id @default(cuid())
+  companyKey   String
+  userId       String
+  userName     String
+  userRole     String
+  action       String
+  controlId    String?
+  controlLabel String?
+  fromStatus   String?
+  toStatus     String?
+  details      String?
+  isLocal      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model ComplianceHistory {
+  id        String  @id @default(cuid())
+  companyId String
+  month     Int
+  year      Int
+  score     Int
+  company   Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, month, year])
+}
+
+model LoginAttempt {
+  id          String   @id @default(cuid())
+  ipAddress   String
+  attemptedAt DateTime @default(now())
+  success     Boolean
+  pinUsed     String?
+}

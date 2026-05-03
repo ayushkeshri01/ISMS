@@ -1,0 +1,39 @@
+﻿
+> isms-dashboard@0.1.0 build
+> next build
+
+  Γû▓ Next.js 14.2.14
+  - Environments: .env
+
+   Creating an optimized production build ...
+node.exe : Failed to compile.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Failed to compile.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+./components/dashboard/mandatory-documents.tsx
+Error: 
+  [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4mD:\isms-dashboard-main\components\dashboard\mandatory-documents.tsx[0m:36:1]
+ [2m36[0m |   const router = useRouter()
+ [2m37[0m | 
+ [2m38[0m |   return (
+ [2m39[0m |     <div className="space-y-4">
+    : [31;1m     ^^^[0m
+ [2m40[0m |       <div className="bg-muted/50 p-4 rounded-lg">
+ [2m41[0m |         <h3 className="font-semibold mb-2">ISO 27001:2022 Mandatory Documents</h3>
+ [2m42[0m |       </div>
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/dashboard/mandatory-documents.tsx
+./components/dashboard/subsidiary-dashboard-client.tsx
+
+
+> Build failed because of webpack errors

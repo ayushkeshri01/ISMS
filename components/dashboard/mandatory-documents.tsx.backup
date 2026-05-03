@@ -1,0 +1,370 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import { Upload, ArrowUpDown, Filter } from "lucide-react"
+import { EvidenceUpload } from "./evidence-upload"
+import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
+
+interface Control {
+  id: string
+  controlId: string
+  label: string
+  status: string
+  category: string
+}
+
+interface Evidence {
+  id: string
+  status: string
+  controlId: string
+}
+
+interface Props {
+  controls: Control[]
+  evidence?: Evidence[]
+  companyKey: string
+}
+
+const DOC_GROUPS = [
+  { id: "clause", name: "Clause Documents", prefix: ["4", "5", "6", "7", "8", "9", "10"] },
+  { id: "annex_a", name: "Annex A Controls", prefix: ["A.5", "A.6", "A.7", "A.8"] },
+]
+
+const MANDATORY_DOCS = [
+  { name: "ISMS Scope Document", clause: "4.3", group: "clause", description: "Defines the boundaries and applicability of the ISMS" },
+  { name: "Information Security Policy", clause: "5.2", group: "clause", description: "Top-level policy for information security" },
+  { name: "Risk Assessment Procedure", clause: "8.2", group: "clause", description: "Methodology for identifying and analyzing information security risks" },
+  { name: "Statement of Applicability (SoA)", clause: "6.1.3", group: "clause", description: "List of all Annex A controls with applicability justification" },
+  { name: "Risk Treatment Plan", clause: "8.3", group: "clause", description: "Documented approach to treat identified risks" },
+  { name: "Information Security Objectives", clause: "6.2", group: "clause", description: "Set of objectives for information security" },
+  { name: "Competence Evidence (HR Records)", clause: "7.2", group: "clause", description: "Records of personnel skills, training and qualifications" },
+  { name: "Operational Planning Documents", clause: "8.1", group: "clause", description: "Documents describing how ISMS processes are planned" },
+  { name: "Security Metrics", clause: "9.1", group: "clause", description: "Defined metrics for measuring security performance" },
+  { name: "Internal Audit Program", clause: "9.2", group: "clause", description: "Program and schedule for internal audits" },
+  { name: "Management Review Records", clause: "9.3", group: "clause", description: "Evidence of management review meetings" },
+  { name: "Nonconformity & CAPA Records", clause: "10.2", group: "clause", description: "Records of nonconformities and corrective actions" },
+  { name: "Asset Inventory", clause: "A.5.9", group: "annex_a", description: "Inventory of information and associated assets" },
+  { name: "Access Control Policy", clause: "A.5.15", group: "annex_a", description: "Policy for controlling access to information" },
+  { name: "Acceptable Use Policy", clause: "A.5.10", group: "annex_a", description: "Rules for acceptable use of information assets" },
+  { name: "Classification Policy", clause: "A.5.12", group: "annex_a", description: "Policy for information classification" },
+  { name: "Data Retention Policy", clause: "A.5.33", group: "annex_a", description: "Policy for retention and disposal of records" },
+  { name: "Incident Response Procedure", clause: "A.5.26", group: "annex_a", description: "Procedures for responding to security incidents" },
+  { name: "Business Continuity Plan", clause: "A.5.30", group: "annex_a", description: "ICT readiness for business continuity" },
+  { name: "Backup Policy", clause: "A.8.13", group: "annex_a", description: "Policy for information backup" },
+  { name: "Physical Security Policy", clause: "A.7.1", group: "annex_a", description: "Policy for physical security" },
+  { name: "HR Security Policy", clause: "A.6.1", group: "annex_a", description: "Personnel security policies" },
+  { name: "Change Management Procedure", clause: "A.8.32", group: "annex_a", description: "Procedure for managing changes" },
+  { name: "Supplier Agreements", clause: "A.5.20", group: "annex_a", description: "Agreements with suppliers regarding security" },
+  { name: "NDA Template", clause: "A.6.6", group: "annex_a", description: "Non-disclosure agreement template" },
+  { name: "Remote Working Policy", clause: "A.6.7", group: "annex_a", description: "Security measures for remote working" },
+  { name: "Cryptography Policy", clause: "A.8.24", group: "annex_a", description: "Policy for use of cryptographic controls" },
+  { name: "Configuration Management", clause: "A.8.9", group: "annex_a", description: "Policy for system configuration" },
+]
+
+interface SelectOption {
+  value: string
+  label: string
+}
+
+interface CustomSelectProps {
+  value: string
+  onChange: (value: string) => void
+  options: SelectOption[]
+  className?: string
+}
+
+function CustomSelect({ value, onChange, options, className }: CustomSelectProps) {
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange(e.target.value)
+  }
+
+  return (
+    <select
+      value={value}
+      onChange={handleChange}
+      className={cn(
+        "h-8 min-w-[120px] rounded-lg border bg-background px-2 py-1 text-sm",
+        "border-input hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring",
+        className
+      )}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+export function MandatoryDocuments({ controls, evidence = [], companyKey }: Props) {
+  const router = useRouter()
+  const safeControls = controls || []
+  const safeEvidence = evidence || []
+  const [sortBy, setSortBy] = useState<string>("clause")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [groupFilter, setGroupFilter] = useState<string>("all")
+
+  const getClauseControl = (clause: string) => {
+    const clauses = clause.split(',').map(c => c.trim())
+    for (const c of clauses) {
+      const found = safeControls.find(ctrl => ctrl.controlId === c)
+      if (found) return found
+    }
+    return null
+  }
+
+  const getEvidenceForControl = (clause: string) => {
+    const clauseControl = getClauseControl(clause)
+    if (!clauseControl) return []
+    return safeEvidence.filter(e => e.controlId === clauseControl.controlId)
+  }
+
+  const getControlStatus = (clause: string) => {
+    const clauseControl = getClauseControl(clause)
+    return clauseControl?.status || "NOT_STARTED"
+  }
+
+  const getStatus = (doc: typeof MANDATORY_DOCS[0]) => {
+    // Check control status first (from database)
+    const clauseControl = getClauseControl(doc.clause)
+    if (clauseControl?.status === 'COMPLETED') return "COMPLETED"
+    if (clauseControl?.status === 'IN_PROGRESS') return "IN_PROGRESS"
+    
+    // Then check evidence status
+    const docEvidence = getEvidenceForControl(doc.clause)
+    const hasApproved = docEvidence.some(e => e.status === 'APPROVED')
+    const hasPending = docEvidence.some(e => e.status === 'PENDING')
+    if (hasApproved) return "COMPLETED"
+    if (hasPending) return "IN_PROGRESS"
+    
+    return "NOT_STARTED"
+  }
+
+  const handleStatusChange = async (clause: string, newStatus: string) => {
+    const clauseControl = getClauseControl(clause)
+    if (!clauseControl) return
+
+    try {
+      const res = await fetch(`/api/controls`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyKey, controlId: clauseControl.controlId, status: newStatus })
+      })
+      
+      if (res.ok) {
+        router.refresh()
+      }
+    } catch (err) {
+      console.error('Failed to update status:', err)
+    }
+  }
+
+  const sortedDocs = MANDATORY_DOCS.filter(doc => {
+    if (statusFilter !== "all") {
+      const status = getStatus(doc)
+      if (statusFilter === "linked") return status !== "NOT_STARTED"
+      if (statusFilter === "not_started") return status === "NOT_STARTED"
+    }
+    if (groupFilter !== "all") return doc.group === groupFilter
+    return true
+  }).sort((a, b) => {
+    if (sortBy === "clause") {
+      const aClause = a.clause.replace(/,/g, '').replace(/A\./, '9')
+      const bClause = b.clause.replace(/,/g, '').replace(/A\./, '9')
+      return aClause.localeCompare(bClause, undefined, { numeric: true })
+    }
+    if (sortBy === "name") return a.name.localeCompare(b.name)
+    if (sortBy === "status") {
+      const statusOrder: Record<string, number> = { "COMPLETED": 0, "IN_PROGRESS": 1, "NOT_STARTED": 2 }
+      const aStatus = getStatus(a)
+      const bStatus = getStatus(b)
+      return (statusOrder[aStatus] ?? 3) - (statusOrder[bStatus] ?? 3)
+    }
+    return 0
+  })
+
+  const filteredDocs = MANDATORY_DOCS.filter(doc => {
+    if (statusFilter !== "all") {
+      const status = getStatus(doc)
+      if (statusFilter === "linked") return status !== "NOT_STARTED"
+      if (statusFilter === "not_started") return status === "NOT_STARTED"
+    }
+    if (groupFilter !== "all") return doc.group === groupFilter
+    return true
+  })
+  
+  const groupedDocs: Record<string, typeof MANDATORY_DOCS> = {}
+  filteredDocs.forEach(doc => {
+    const key = doc.group
+    if (!groupedDocs[key]) groupedDocs[key] = []
+    groupedDocs[key].push(doc)
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-muted/50 p-4 rounded-lg">
+        <h3 className="font-semibold mb-2">ISO 27001:2022 Mandatory Documents</h3>
+        <p className="text-sm text-muted-foreground">
+          These are the core documents required for ISO 27001:2022 certification. 
+          Upload evidence for each document or link to existing controls.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <CustomSelect
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: "all", label: "All Status" },
+              { value: "linked", label: "Linked" },
+              { value: "not_started", label: "Not Started" },
+            ]}
+          />
+        </div>
+
+        <CustomSelect
+          value={groupFilter}
+          onChange={setGroupFilter}
+          options={[
+            { value: "all", label: "All Groups" },
+            { value: "clause", label: "Clause Documents" },
+            { value: "annex_a", label: "Annex A Controls" },
+          ]}
+        />
+
+        <div className="flex items-center gap-2 ml-auto">
+          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+          <CustomSelect
+            value={sortBy}
+            onChange={setSortBy}
+            options={[
+              { value: "clause", label: "Clause" },
+              { value: "name", label: "Name" },
+              { value: "status", label: "Status" },
+            ]}
+          />
+        </div>
+      </div>
+
+      {groupFilter === "all" ? (
+        Object.entries(groupedDocs).map(([groupKey, docs]) => (
+          <div key={groupKey} className="space-y-2">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mt-4">
+              {groupKey === "clause" ? "Clause Documents" : "Annex A Controls"}
+            </h4>
+            <div className="grid gap-3">
+              {docs.map((doc) => {
+                const clauseControl = getClauseControl(doc.clause)
+                const status = getStatus(doc)
+                const isLinked = status !== "NOT_STARTED"
+
+                return (
+                  <Card key={doc.name} className="bg-muted/30">
+                    <CardContent className="py-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-sm text-primary">{doc.clause}</span>
+                            <span className="font-medium">{doc.name}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{doc.description}</p>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <CustomSelect
+                            value={status}
+                            onChange={(val) => handleStatusChange(doc.clause, val)}
+                            options={[
+                              { value: "NOT_STARTED", label: "Not Started" },
+                              { value: "IN_PROGRESS", label: "In Progress" },
+                              { value: "COMPLETED", label: "Completed" },
+                            ]}
+                            className="min-w-[130px]"
+                          />
+                          <Dialog>
+                             <DialogTrigger render={(props) => (
+                               <Button variant={isLinked ? "outline" : "default"} size="sm" {...props}>
+                                 <Upload className="h-4 w-4 mr-2" />
+                                 {isLinked ? "View" : "Upload"}
+                               </Button>
+                             )}>
+                            <DialogContent>
+                              <EvidenceUpload
+                                controls={controls}
+                                companyKey={companyKey}
+                                preselectedControl={clauseControl?.controlId}
+                              />
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="grid gap-3">
+          {sortedDocs.map((doc) => {
+            const clauseControl = getClauseControl(doc.clause)
+            const status = getStatus(doc)
+            const isLinked = status !== "NOT_STARTED"
+
+            return (
+              <Card key={doc.name} className="bg-muted/30">
+                <CardContent className="py-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-sm text-primary">{doc.clause}</span>
+                        <span className="font-medium">{doc.name}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{doc.description}</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <CustomSelect
+                        value={status}
+                        onChange={(val) => handleStatusChange(doc.clause, val)}
+                        options={[
+                          { value: "NOT_STARTED", label: "Not Started" },
+                          { value: "IN_PROGRESS", label: "In Progress" },
+                          { value: "COMPLETED", label: "Completed" },
+                        ]}
+                        className="min-w-[130px]"
+                      />
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant={isLinked ? "outline" : "default"} size="sm">
+                            <Upload className="h-4 w-4 mr-2" />
+                            {isLinked ? "View" : "Upload"}
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <EvidenceUpload
+                            controls={controls}
+                            companyKey={companyKey}
+                            preselectedControl={clauseControl?.controlId}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}

@@ -3,9 +3,10 @@
 import { NotificationBell } from "@/components/dashboard/notification-bell"
 
 interface Props {
-  userId: string
+  _userId: string
 }
 
-export function NotificationBellWrapper({ userId }: Props) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function NotificationBellWrapper({ _userId }: Props) {
   return <NotificationBell />
 }

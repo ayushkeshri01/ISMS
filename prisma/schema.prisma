@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -57,7 +57,7 @@ model Evidence {
   filename       String
   fileType       String
   fileSize       Int
-  fileData       Bytes
+  fileData       Bytes  @db.ByteA
   evidenceType   String
   status         String    @default("PENDING")
   title          String?
@@ -84,7 +84,7 @@ model Certificate {
   scope         String
   surveillance1 DateTime?
   surveillance2 DateTime?
-  fileData      Bytes?
+  fileData      Bytes? @db.ByteA
   createdAt     DateTime  @default(now())
   company       Company   @relation(fields: [companyId], references: [id])
 }
@@ -122,4 +122,13 @@ model LoginAttempt {
   attemptedAt DateTime @default(now())
   success     Boolean
   pinUsed     String?
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

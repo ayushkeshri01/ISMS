@@ -23,7 +23,6 @@ export function ExportModal({ companies }: ExportModalProps) {
   const [open, setOpen] = useState(false)
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>(companies.map(c => c.key))
   const [exportType, setExportType] = useState<ExportType>("full")
-  const [isExporting, setIsExporting] = useState(false)
 
   const toggleCompany = (key: string) => {
     setSelectedCompanies(prev =>
@@ -32,8 +31,6 @@ export function ExportModal({ companies }: ExportModalProps) {
   }
 
   const handleExport = async () => {
-    setIsExporting(true)
-    
     try {
       if (exportType === "evidence" || exportType === "full") {
         await exportAllEvidence()
@@ -57,7 +54,6 @@ export function ExportModal({ companies }: ExportModalProps) {
       alert("Export failed. Please try again.")
     }
     
-    setIsExporting(false)
     setOpen(false)
   }
 

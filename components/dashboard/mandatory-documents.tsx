@@ -196,7 +196,7 @@ export function MandatoryDocuments({ controls, evidence = [], companyKey }: Prop
 
   // Memoize filtered and sorted docs
   const processedDocs = useMemo(() => {
-    let docs = MANDATORY_DOCS.filter(doc => {
+    const docs = MANDATORY_DOCS.filter(doc => {
       if (statusFilter !== "all") {
         const status = statusMap.get(doc.clause) || "NOT_STARTED"
         if (statusFilter === "linked") return status !== "NOT_STARTED"

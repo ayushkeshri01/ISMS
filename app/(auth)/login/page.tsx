@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,7 +10,6 @@ import { AlertCircle } from "lucide-react"
 import Image from "next/image"
 
 export default function LoginPage() {
-  const router = useRouter()
   const [pin, setPin] = useState(["", "", "", ""])
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -47,7 +45,7 @@ export default function LoginPage() {
     
     try {
       // Use NextAuth's built-in redirect
-      const result = await signIn("credentials", {
+      await signIn("credentials", {
         pin: pinValue,
         redirect: true,
         callbackUrl: "/auth/redirect"

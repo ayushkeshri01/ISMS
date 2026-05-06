@@ -14,7 +14,6 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  ShieldCheck,
   Download,
   Settings,
   LogOut,

@@ -10,6 +10,13 @@ import { Upload } from "lucide-react"
 import { EvidenceUpload } from "./evidence-upload"
 import { CONTROL_CATEGORIES } from "@/lib/constants"
 import { cn } from "@/lib/utils"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface Control {
   id: string
@@ -41,29 +48,23 @@ interface StatusSelectProps {
 }
 
 function StatusSelect({ value, onChange, disabled, isPending }: StatusSelectProps) {
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (!disabled && !isPending) {
-      onChange(e.target.value)
-    }
-  }
-  
   return (
-    <select
+    <Select
       value={value}
-      onChange={handleChange}
+      onValueChange={onChange}
       disabled={disabled || isPending}
-      className={cn(
-        "h-8 min-w-[110px] rounded-lg border bg-background px-2 py-1 text-sm",
-        "border-input hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring",
-        (disabled || isPending) && "opacity-50 cursor-not-allowed"
-      )}
     >
-      {STATUS_OPTIONS.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger className={cn("h-8 min-w-[110px]", (disabled || isPending) && "opacity-50 cursor-not-allowed")}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {STATUS_OPTIONS.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
 

@@ -1,12 +1,22 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { EVIDENCE_TYPES } from "@/lib/constants"
-import { Upload, X, File, Search } from "lucide-react"
+import { Upload, X, File, Search, CalendarIcon } from "lucide-react"
+import { format } from "date-fns"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 
 interface Control {
   id: string
@@ -116,14 +126,12 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Upload Evidence
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <Upload className="h-5 w-5" />
+          <span className="font-semibold">Upload Evidence</span>
+        </div>
+        <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Control *</Label>
@@ -137,33 +145,39 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
                     className="pl-8"
                   />
                 </div>
-                <select
+                <Select
                   value={formData.controlId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, controlId: e.target.value }))}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring mt-2"
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, controlId: value }))}
                 >
-                  <option value="">-- Select control --</option>
-                  {filteredControls.map(c => (
-                    <option key={c.controlId} value={c.controlId}>
-                      {c.controlId} - {c.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full mt-2">
+                    <SelectValue placeholder="-- Select control --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredControls.map(c => (
+                      <SelectItem key={c.controlId} value={c.controlId}>
+                        {c.controlId} - {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           
             <div className="space-y-2">
               <Label>Evidence Type *</Label>
-              <select
+              <Select
                 value={formData.evidenceType}
-                onChange={(e) => setFormData(prev => ({ ...prev, evidenceType: e.target.value }))}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                onValueChange={(value) => setFormData(prev => ({ ...prev, evidenceType: value }))}
               >
-                <option value="">-- Select type --</option>
-                {EVIDENCE_TYPES.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="-- Select type --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EVIDENCE_TYPES.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-xs text-muted-foreground">Selected: {formData.evidenceType || "none"}</p>
             </div>
           
@@ -196,11 +210,23 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
           
             <div className="space-y-2">
               <Label>Date of Document</Label>
-              <Input
-                type="date"
-                value={formData.dateOfDocument}
-                onChange={(e) => setFormData(prev => ({ ...prev, dateOfDocument: e.target.value }))}
-              />
+              <Popover>
+                <PopoverTrigger className={cn(buttonVariants({ variant: "outline" }), "w-full justify-start text-left font-normal", !formData.dateOfDocument && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.dateOfDocument ? format(new Date(formData.dateOfDocument + 'T00:00:00'), "PPP") : <span>Pick a date</span>}
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.dateOfDocument ? new Date(formData.dateOfDocument + 'T00:00:00') : undefined}
+                    onSelect={(date) => setFormData(prev => ({
+                      ...prev,
+                      dateOfDocument: date ? format(date, "yyyy-MM-dd") : ""
+                    }))}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           
@@ -245,8 +271,8 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
           >
             {uploading ? "Uploading..." : "Upload Evidence"}
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

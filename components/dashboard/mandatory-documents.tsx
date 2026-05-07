@@ -8,6 +8,13 @@ import { Upload, ArrowUpDown, Filter } from "lucide-react"
 import { EvidenceUpload } from "./evidence-upload"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface Control {
   id: string
@@ -91,21 +98,18 @@ function CustomSelect({ value, onChange, options, className }: {
   className?: string
 }) {
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={cn(
-        "h-8 min-w-[120px] rounded-lg border bg-background px-2 py-1 text-sm",
-        "border-input hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring",
-        className
-      )}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className={cn("h-8 min-w-[120px]", className)}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
 

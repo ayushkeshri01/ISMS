@@ -33,10 +33,10 @@ export const BUILT_IN_USERS = [
 ];
 
 export const ROLE_ACCESS: Record<string, { access: string; tabs: string[] }> = {
-  CIO: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'review', 'certificates', 'users', 'trend', 'log'] },
-  IT_MANAGER: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'review', 'certificates', 'users', 'trend', 'log'] },
-  STQM_MANAGER: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'review', 'certificates', 'users', 'trend', 'log'] },
-  HR_MANAGER: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'review', 'certificates', 'users', 'trend', 'log'] },
+  CIO: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'review', 'review-schedule', 'certificates', 'users', 'trend', 'log'] },
+  IT_MANAGER: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'review', 'review-schedule', 'certificates', 'users', 'trend', 'log'] },
+  STQM_MANAGER: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'review', 'review-schedule', 'certificates', 'users', 'trend', 'log'] },
+  HR_MANAGER: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'review', 'review-schedule', 'certificates', 'users', 'trend', 'log'] },
   ADMIN_FACILITIES: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'certificates', 'users', 'trend', 'log'] },
   LEGAL: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'certificates', 'users', 'trend', 'log'] },
   MD_CEO: { access: 'read', tabs: ['exec', 'trend', 'log'] },

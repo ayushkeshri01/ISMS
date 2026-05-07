@@ -2,14 +2,17 @@
 
 import { useState, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Plus, FileText, Upload, X } from "lucide-react"
-import { formatDate } from "@/lib/utils"
+import { Plus, FileText, Upload, X, CalendarIcon } from "lucide-react"
+import { formatDate, cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface Certificate {
   id: string
@@ -126,37 +129,83 @@ export function CertificateForm({ certificates = [], companyKey }: Props) {
                 </div>
                 <div className="space-y-2">
                   <Label>Valid From *</Label>
-                  <Input
-                    type="date"
-                    value={formData.validFrom}
-                    onChange={(e) => setFormData(prev => ({ ...prev, validFrom: e.target.value }))}
-                    required
-                  />
+                  <Popover>
+                    <PopoverTrigger className={cn(buttonVariants({ variant: "outline" }), "w-full justify-start text-left font-normal", !formData.validFrom && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.validFrom ? format(new Date(formData.validFrom + 'T00:00:00'), "PPP") : <span>Pick a date</span>}
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.validFrom ? new Date(formData.validFrom + 'T00:00:00') : undefined}
+                        onSelect={(date) => setFormData(prev => ({
+                          ...prev,
+                          validFrom: date ? format(date, "yyyy-MM-dd") : ""
+                        }))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-2">
                   <Label>Valid To *</Label>
-                  <Input
-                    type="date"
-                    value={formData.validTo}
-                    onChange={(e) => setFormData(prev => ({ ...prev, validTo: e.target.value }))}
-                    required
-                  />
+                  <Popover>
+                    <PopoverTrigger className={cn(buttonVariants({ variant: "outline" }), "w-full justify-start text-left font-normal", !formData.validTo && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.validTo ? format(new Date(formData.validTo + 'T00:00:00'), "PPP") : <span>Pick a date</span>}
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.validTo ? new Date(formData.validTo + 'T00:00:00') : undefined}
+                        onSelect={(date) => setFormData(prev => ({
+                          ...prev,
+                          validTo: date ? format(date, "yyyy-MM-dd") : ""
+                        }))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-2">
                   <Label>Surveillance Audit 1 Date</Label>
-                  <Input
-                    type="date"
-                    value={formData.surveillanceAudit1}
-                    onChange={(e) => setFormData(prev => ({ ...prev, surveillanceAudit1: e.target.value }))}
-                  />
+                  <Popover>
+                    <PopoverTrigger className={cn(buttonVariants({ variant: "outline" }), "w-full justify-start text-left font-normal", !formData.surveillanceAudit1 && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.surveillanceAudit1 ? format(new Date(formData.surveillanceAudit1 + 'T00:00:00'), "PPP") : <span>Pick a date</span>}
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.surveillanceAudit1 ? new Date(formData.surveillanceAudit1 + 'T00:00:00') : undefined}
+                        onSelect={(date) => setFormData(prev => ({
+                          ...prev,
+                          surveillanceAudit1: date ? format(date, "yyyy-MM-dd") : ""
+                        }))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-2">
                   <Label>Surveillance Audit 2 Date</Label>
-                  <Input
-                    type="date"
-                    value={formData.surveillanceAudit2}
-                    onChange={(e) => setFormData(prev => ({ ...prev, surveillanceAudit2: e.target.value }))}
-                  />
+                  <Popover>
+                    <PopoverTrigger className={cn(buttonVariants({ variant: "outline" }), "w-full justify-start text-left font-normal", !formData.surveillanceAudit2 && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.surveillanceAudit2 ? format(new Date(formData.surveillanceAudit2 + 'T00:00:00'), "PPP") : <span>Pick a date</span>}
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.surveillanceAudit2 ? new Date(formData.surveillanceAudit2 + 'T00:00:00') : undefined}
+                        onSelect={(date) => setFormData(prev => ({
+                          ...prev,
+                          surveillanceAudit2: date ? format(date, "yyyy-MM-dd") : ""
+                        }))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
               <div className="space-y-2">

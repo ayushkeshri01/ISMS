@@ -18,6 +18,7 @@ import { ActivityLogTable } from "./activity-log"
 import { TrendChart } from "./trend-chart"
 import { CertificateForm } from "./certificate-form"
 import { UserManagement } from "./user-management"
+import { ReviewSchedule } from "./review-schedule"
 
 interface Control {
   id: string

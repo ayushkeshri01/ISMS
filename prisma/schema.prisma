@@ -132,3 +132,38 @@ model Notification {
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 }
+
+model ReviewSchedule {
+  id                 String    @id @default(cuid())
+  controlId          String
+  companyId          String
+  frequency          String    @default("ANNUAL")
+  suggestedFrequency String?
+  lastReviewedAt     DateTime?
+  nextReviewAt       DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  updatedById        String?
+
+  control Control @relation(fields: [controlId], references: [id])
+  company Company @relation(fields: [companyId], references: [id])
+
+  reviewHistory ReviewHistory[]
+
+  @@unique([controlId, companyId])
+}
+
+model ReviewHistory {
+  id                String   @id @default(cuid())
+  reviewScheduleId  String
+  controlId         String
+  controlLabel      String?
+  companyKey        String
+  reviewedAt        DateTime @default(now())
+  reviewedById      String
+  reviewedByName    String
+  frequency         String?
+  notes             String?
+
+  reviewSchedule ReviewSchedule @relation(fields: [reviewScheduleId], references: [id])
+}

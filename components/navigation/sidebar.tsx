@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Activity,
   BarChart3,
+  Calendar,
 } from "lucide-react"
 import { COMPANIES, COMPANY_KEYS } from "@/lib/constants"
 
@@ -30,6 +31,7 @@ const TAB_META: Record<string, { label: string; icon: React.ElementType }> = {
   "my-controls": { label: "Controls",  icon: ClipboardList   },
   docs:        { label: "Documents",   icon: FileText         },
   review:      { label: "Review",      icon: ClipboardCheck   },
+  "review-schedule": { label: "Review Schedule", icon: Calendar },
   certificates:{ label: "Certificates",icon: Award            },
   users:       { label: "Users",       icon: Users            },
   trend:       { label: "Trend",       icon: TrendingUp       },

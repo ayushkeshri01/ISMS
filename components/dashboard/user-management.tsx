@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Trash2, Plus, User } from "lucide-react"
 
 interface UserData {
@@ -126,31 +133,35 @@ export function UserManagement({ companyKey }: Props) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Role *</Label>
-                    <select 
-                      className="flex w-full rounded-lg border border-input bg-transparent py-2 px-2.5 text-sm" 
+                    <Select 
                       value={formData.role} 
-                      onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))} 
-                      required
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
                     >
-                      <option value="" disabled>Select role</option>
-                      {ROLES.map(role => (
-                        <option key={role} value={role}>{role.replace(/_/g, ' ')}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map(role => (
+                          <SelectItem key={role} value={role}>{role.replace(/_/g, ' ')}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Department *</Label>
-                    <select 
-                      className="flex w-full rounded-lg border border-input bg-transparent py-2 px-2.5 text-sm" 
+                    <Select 
                       value={formData.department} 
-                      onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))} 
-                      required
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, department: value }))}
                     >
-                      <option value="" disabled>Select dept</option>
-                      {DEPARTMENTS.map(dept => (
-                        <option key={dept} value={dept}>{dept}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select dept" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DEPARTMENTS.map(dept => (
+                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">

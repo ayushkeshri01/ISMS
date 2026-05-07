@@ -13,6 +13,13 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { AlertCircle, Building2, ShieldCheck } from "lucide-react"
 import Image from "next/image"
 
@@ -59,12 +66,15 @@ export default function LoginPage() {
     useRef<HTMLInputElement>(null),
   ]
 
-  // Already logged in → hard redirect so the server-side auth() sees the cookie
+  // Already logged in → redirect to the right dashboard directly
   useEffect(() => {
-    if (status === "authenticated") {
-      window.location.replace("/auth/redirect")
+    if (status === "authenticated" && session?.user) {
+      const dest = session.user.companyKey
+        ? `/dashboard/${session.user.companyKey}`
+        : "/dashboard/master"
+      window.location.replace(dest)
     }
-  }, [status])
+  }, [status, session])
 
   // Show a spinner while the session is being resolved
   if (status === "loading") {
@@ -144,11 +154,11 @@ export default function LoginPage() {
         setPin(["", "", "", ""])
         setTimeout(() => pinRefs[0].current?.focus(), 50)
       } else {
-        // Hard navigation: forces a fresh request so the server-side auth()
-        // in /auth/redirect receives the session cookie NextAuth just set.
-        // Using router.push here causes a race condition where the SSR render
-        // fires before the cookie is readable, creating an infinite redirect loop.
-        window.location.href = "/auth/redirect"
+        // Redirect directly — we already know the companyKey from the form
+        const dest = selectedCompany === "group"
+          ? "/dashboard/master"
+          : `/dashboard/${selectedCompany}`
+        window.location.href = dest
       }
     } catch {
       setError("Connection error. Please try again.")
@@ -200,40 +210,44 @@ export default function LoginPage() {
 
             {/* Step 1 — Company */}
             <div className="space-y-2">
-              <Label htmlFor="company-select" className="flex items-center gap-1.5">
+              <Label className="flex items-center gap-1.5">
                 <Building2 className="h-3.5 w-3.5" />
                 Company
               </Label>
-              <select
-                id="company-select"
+              <Select
                 value={selectedCompany}
-                onChange={(e) => handleCompanyChange(e.target.value)}
+                onValueChange={handleCompanyChange}
                 disabled={loading}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value="" disabled>Select company…</option>
-                {COMPANIES.map((c) => (
-                  <option key={c.key} value={c.key}>{c.label}</option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full justify-center text-center gap-1">
+                  <SelectValue placeholder="Select company…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COMPANIES.map((c) => (
+                    <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Step 2 — Role (shown after company selected) */}
             {selectedCompany && (
               <div className="space-y-2">
-                <Label htmlFor="role-select">Role</Label>
-                <select
-                  id="role-select"
+                <Label>Role</Label>
+                <Select
                   value={selectedRole}
-                  onChange={(e) => handleRoleChange(e.target.value)}
+                  onValueChange={handleRoleChange}
                   disabled={loading}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <option value="" disabled>Select role…</option>
-                  {roleList.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full justify-center text-center gap-1">
+                    <SelectValue placeholder="Select role…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roleList.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 

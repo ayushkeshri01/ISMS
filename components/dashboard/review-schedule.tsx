@@ -113,7 +113,7 @@ export function ReviewSchedule({ companyKey }: Props) {
       if (!res.ok) throw new Error("Failed to fetch")
       const data = await res.json()
       setSchedules(data.schedules)
-    } catch (err) {
+    } catch {
       toast.error("Failed to load review schedule")
     } finally {
       setLoading(false)

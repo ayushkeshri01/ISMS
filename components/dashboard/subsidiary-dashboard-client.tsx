@@ -87,6 +87,29 @@ export function SubsidiaryDashboardClient({
     }
   }, [userRole, companyKeyLower])
   
+  const toggleCioReview = (checked: boolean) => {
+    setCioReviewEnabled(checked)
+    localStorage.setItem(`cio-review-${companyKeyLower}`, String(checked))
+  }
+
+  const effectiveTabs = userRole === 'CIO' && !cioReviewEnabled
+    ? userTabs.filter(tab => tab !== 'review')
+    : userTabs
+
+  const requestedTab = searchParams.get("tab")
+  const activeTab = requestedTab && effectiveTabs.includes(requestedTab)
+    ? requestedTab
+    : (effectiveTabs[0] || "overview")
+
+  useEffect(() => {
+    if (!requestedTab && effectiveTabs.length > 0) {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set("tab", effectiveTabs[0])
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Conditional return AFTER all hooks
   if (!company) {
     return <div className="p-8 text-center">Loading company data...</div>
@@ -98,33 +121,6 @@ export function SubsidiaryDashboardClient({
     router.push("/dashboard/master")
     return null
   }
-  
-  const toggleCioReview = (checked: boolean) => {
-    setCioReviewEnabled(checked)
-    localStorage.setItem(`cio-review-${companyKeyLower}`, String(checked))
-  }
-  
-  // Compute effective tabs based on CIO toggle
-  const effectiveTabs = userRole === 'CIO' && !cioReviewEnabled
-    ? userTabs.filter(tab => tab !== 'review')
-    : userTabs
-
-  const requestedTab = searchParams.get("tab")
-  const activeTab = requestedTab && effectiveTabs.includes(requestedTab)
-    ? requestedTab
-    : (effectiveTabs[0] || "overview")
-
-  // On first load (no tab param), push the default tab into the URL so the
-  // topbar and sidebar both reflect the active section immediately.
-  useEffect(() => {
-    if (!requestedTab && effectiveTabs.length > 0) {
-      const params = new URLSearchParams(searchParams.toString())
-      params.set("tab", effectiveTabs[0])
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
 
   const stats = {
     total: allControls.length,

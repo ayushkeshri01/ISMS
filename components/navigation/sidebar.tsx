@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useSearchParams } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { signOut } from "next-auth/react"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
@@ -58,17 +58,18 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname     = usePathname()
   const searchParams = useSearchParams()
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("sidebar-collapsed")
+      return stored === "true"
+    }
+    return false
+  })
   const isMaster  = pathname.includes("/dashboard/master")
   const isCIO     = userRole === "CIO"
   const activeTab = searchParams.get("tab") ?? userTabs[0] ?? "overview"
   // Show tab nav only when on a company dashboard page
   const isCompanyPage = !!companyKey && pathname.includes(`/dashboard/${companyKey}`) && !isMaster
-
-  useEffect(() => {
-    const stored = localStorage.getItem("sidebar-collapsed")
-    if (stored !== null) setCollapsed(stored === "true")
-  }, [])
 
   const toggleCollapsed = () => {
     const next = !collapsed

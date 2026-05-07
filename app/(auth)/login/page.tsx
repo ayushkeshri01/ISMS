@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useState, useRef, useEffect } from "react"
+import { signIn, useSession } from "next-auth/react"
 import {
   Card,
   CardContent,
@@ -44,8 +43,9 @@ const GROUP_ROLES = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function LoginPage() {
-  const router = useRouter()
+  const { data: session, status } = useSession()
 
+  // All hooks declared before any early return (Rules of Hooks)
   const [selectedCompany, setSelectedCompany] = useState("")
   const [selectedRole,    setSelectedRole]    = useState("")
   const [pin,             setPin]             = useState(["", "", "", ""])
@@ -58,6 +58,25 @@ export default function LoginPage() {
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
   ]
+
+  // Already logged in → hard redirect so the server-side auth() sees the cookie
+  useEffect(() => {
+    if (status === "authenticated") {
+      window.location.replace("/auth/redirect")
+    }
+  }, [status])
+
+  // Show a spinner while the session is being resolved
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Checking session…</p>
+      </div>
+    )
+  }
+
+  // Already authenticated — render nothing while the redirect above fires
+  if (session) return null
 
   const isGroup   = selectedCompany === "group"
   const roleList  = isGroup ? GROUP_ROLES : SUBSIDIARY_ROLES
@@ -125,8 +144,11 @@ export default function LoginPage() {
         setPin(["", "", "", ""])
         setTimeout(() => pinRefs[0].current?.focus(), 50)
       } else {
-        router.push("/auth/redirect")
-        router.refresh()
+        // Hard navigation: forces a fresh request so the server-side auth()
+        // in /auth/redirect receives the session cookie NextAuth just set.
+        // Using router.push here causes a race condition where the SSR render
+        // fires before the cookie is readable, creating an infinite redirect loop.
+        window.location.href = "/auth/redirect"
       }
     } catch {
       setError("Connection error. Please try again.")

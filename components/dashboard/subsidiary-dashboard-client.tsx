@@ -120,6 +120,17 @@ export function SubsidiaryDashboardClient({
     ? requestedTab
     : (effectiveTabs[0] || "overview")
 
+  // On first load (no tab param), push the default tab into the URL so the
+  // topbar and sidebar both reflect the active section immediately.
+  useEffect(() => {
+    if (!requestedTab && effectiveTabs.length > 0) {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set("tab", effectiveTabs[0])
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleTabChange = (tabValue: string) => {
     if (!effectiveTabs.includes(tabValue) || tabValue === activeTab) {
       return
@@ -152,9 +163,9 @@ export function SubsidiaryDashboardClient({
     <div className="space-y-4">
       <Tabs value={activeTab} onValueChange={(value) => handleTabChange(String(value))}>
         {/* Tab bar — full width, scrollable on mobile */}
-        <div className="flex items-center justify-between gap-4 mb-4">
-          <div className="overflow-x-auto">
-            <TabsList className="h-auto flex-wrap gap-0.5 w-full">
+        <div className="flex flex-col gap-3 mb-4">
+          <div className="flex justify-center overflow-x-auto">
+            <TabsList className="h-auto flex-wrap justify-center gap-0.5">
               {effectiveTabs.map((tab) => (
                 <TabsTrigger key={tab} value={tab} className="px-3 py-1.5">
                   {formatTabLabel(tab)}
@@ -163,8 +174,8 @@ export function SubsidiaryDashboardClient({
             </TabsList>
           </div>
 
-          {/* Actions top-right */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Actions row */}
+          <div className="flex items-center justify-end gap-2">
             {userRole === 'CIO' && (
               <div className="flex items-center gap-2">
                 <Checkbox

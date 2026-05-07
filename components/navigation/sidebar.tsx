@@ -178,21 +178,8 @@ export function Sidebar({
           </>
         )}
 
-        {/* Non-CIO: single company link */}
-        {!isCIO && companyKey && (
-          <NavItem
-            href={`/dashboard/${companyKey}`}
-            label={companyName ?? companyKey.toUpperCase()}
-            icon={Building2}
-            active={isCompanyPage && !activeTab}
-            collapsed={collapsed}
-            logo={companyInfo?.logo}
-            onClose={onClose}
-          />
-        )}
-
-        {/* Tab nav items — shown when on a company page */}
-        {isCompanyPage && userTabs.length > 0 && (
+        {/* Tab nav items — shown when on a company page (non-CIO) */}
+        {isCompanyPage && !isCIO && userTabs.length > 0 && (
           <>
             <div className={cn("px-3 py-1", collapsed && "md:px-1")}>
               <Separator />

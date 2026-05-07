@@ -70,6 +70,7 @@ export function DashboardShell({
           userName={userName}
           userRole={userRole}
           userAccess={userAccess}
+          userTabs={userTabs}
           onMobileMenuToggle={() => setMobileOpen((o) => !o)}
         />
 

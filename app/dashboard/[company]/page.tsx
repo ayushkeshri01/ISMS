@@ -79,9 +79,9 @@ async function getCompanyData(companyKey: string, userId: string, userRole: stri
 export default async function SubsidiaryDashboardPage({ 
   params 
 }: { 
-  params: Promise<{ company: string }> 
+  params: { company: string } 
 }) {
-  const { company: companyKey } = await params
+  const { company: companyKey } = params
   const normalizedKey = companyKey.toLowerCase()
   const session = await auth()
   

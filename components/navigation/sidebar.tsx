@@ -4,14 +4,13 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
+import { signOut } from "next-auth/react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import {
   LayoutDashboard,
   ShieldCheck,
-  FileText,
   CheckSquare,
   BarChart3,
   ScrollText,
@@ -21,53 +20,68 @@ import {
   ChevronLeft,
   ChevronRight,
   Building2,
+  LogOut,
+  X,
+  ChevronDown,
 } from "lucide-react"
 import { COMPANIES, COMPANY_KEYS } from "@/lib/constants"
 
 // ─── Tab icon map ──────────────────────────────────────────────────────────────
 const TAB_ICONS: Record<string, React.ElementType> = {
-  overview:     LayoutDashboard,
+  overview:      LayoutDashboard,
   "my-controls": ShieldCheck,
-  docs:         BookOpen,
-  review:       CheckSquare,
-  trend:        BarChart3,
-  log:          ScrollText,
-  certificates: Award,
-  users:        Users,
-  exec:         BarChart3,
+  docs:          BookOpen,
+  review:        CheckSquare,
+  trend:         BarChart3,
+  log:           ScrollText,
+  certificates:  Award,
+  users:         Users,
+  exec:          BarChart3,
 }
 
 function tabLabel(tab: string) {
   const MAP: Record<string, string> = {
-    overview:       "Overview",
-    "my-controls":  "Controls",
-    docs:           "Documents",
-    review:         "Review",
-    trend:          "Trend",
-    log:            "Activity Log",
-    certificates:   "Certificates",
-    users:          "Users",
-    exec:           "Executive View",
+    overview:      "Overview",
+    "my-controls": "Controls",
+    docs:          "Documents",
+    review:        "Review",
+    trend:         "Trend",
+    log:           "Activity Log",
+    certificates:  "Certificates",
+    users:         "Users",
+    exec:          "Executive View",
   }
   return MAP[tab] ?? tab.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
+// ─── Props ────────────────────────────────────────────────────────────────────
 interface SidebarProps {
   userRole:    string
   userTabs:    string[]
   companyKey:  string | null
   companyName: string | null
+  userName:    string
+  onClose:     () => void
 }
 
-export function Sidebar({ userRole, userTabs, companyKey, companyName }: SidebarProps) {
-  const pathname    = usePathname()
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+export function Sidebar({
+  userRole,
+  userTabs,
+  companyKey,
+  companyName,
+  userName,
+  onClose,
+}: SidebarProps) {
+  const pathname     = usePathname()
   const searchParams = useSearchParams()
-  const activeTab   = searchParams.get("tab")
-  const [collapsed, setCollapsed] = useState(false)
-  const isMaster    = pathname.includes("/dashboard/master")
-  const isCIO       = userRole === "CIO"
+  const activeTab    = searchParams.get("tab")
 
-  // Persist collapsed state
+  const [collapsed, setCollapsed] = useState(false)
+  const isMaster = pathname.includes("/dashboard/master")
+  const isCIO    = userRole === "CIO"
+
+  // Restore collapsed preference (desktop only)
   useEffect(() => {
     const stored = localStorage.getItem("sidebar-collapsed")
     if (stored !== null) setCollapsed(stored === "true")
@@ -79,38 +93,68 @@ export function Sidebar({ userRole, userTabs, companyKey, companyName }: Sidebar
     localStorage.setItem("sidebar-collapsed", String(next))
   }
 
+  // Friendly role label
+  const roleLabel = userRole.replace(/_/g, " ").toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+
+  // Short company label for user card
+  const companyShort = companyName
+    ? companyName.split(" ").slice(0, 2).join(" ")
+    : "Vikas Group"
+
   return (
     <aside
       className={cn(
-        "relative flex flex-col border-r bg-card transition-all duration-300 ease-in-out shrink-0",
-        collapsed ? "w-16" : "w-60"
+        "relative flex h-full flex-col border-r bg-card transition-all duration-300 ease-in-out",
+        "w-64 md:w-auto",
+        collapsed ? "md:w-16" : "md:w-60"
       )}
     >
-      {/* Logo */}
-      <div className={cn("flex items-center gap-3 px-4 py-4 border-b", collapsed && "justify-center px-0")}>
-        <Link href="/dashboard/master" className="flex items-center gap-2.5 min-w-0">
+      {/* ── Header: logo + mobile close ─────────────────────────────── */}
+      <div
+        className={cn(
+          "flex items-center gap-3 border-b px-4 py-4",
+          collapsed && "md:justify-center md:px-0"
+        )}
+      >
+        <Link
+          href="/dashboard/master"
+          className="flex min-w-0 items-center gap-2.5"
+          onClick={onClose}
+        >
           <Image
             src="/logos/vikasgrouplogo.png"
             alt="Vikas Group"
             width={32}
             height={32}
-            className="h-8 w-8 object-contain shrink-0"
+            className="h-8 w-8 shrink-0 object-contain"
           />
-          {!collapsed && (
-            <span className="font-bold text-sm leading-tight truncate">VG ISMS</span>
-          )}
+          <span className={cn("truncate font-bold text-sm", collapsed && "md:hidden")}>
+            VG ISMS
+          </span>
         </Link>
-        {!collapsed && (
-          <Badge variant="outline" className="ml-auto shrink-0 text-xs px-1.5 py-0">
-            <span className="mr-1 opacity-70">●</span>Live
-          </Badge>
-        )}
+
+        <Badge
+          variant="outline"
+          className={cn("ml-auto shrink-0 px-1.5 py-0 text-xs", collapsed && "md:hidden")}
+        >
+          <span className="mr-1 opacity-70">●</span>Live
+        </Badge>
+
+        {/* Mobile-only close button */}
+        <button
+          onClick={onClose}
+          className="ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-muted md:hidden"
+          aria-label="Close sidebar"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
-      {/* Nav content */}
-      <nav className="flex-1 overflow-y-auto py-3 space-y-1">
+      {/* ── Nav ─────────────────────────────────────────────────────── */}
+      <nav className="flex-1 overflow-y-auto py-3 space-y-0.5">
 
-        {/* Master Dashboard — always visible for CIO */}
+        {/* Master Dashboard (CIO only) */}
         {isCIO && (
           <>
             <NavItem
@@ -119,23 +163,24 @@ export function Sidebar({ userRole, userTabs, companyKey, companyName }: Sidebar
               icon={LayoutDashboard}
               active={isMaster}
               collapsed={collapsed}
+              onClose={onClose}
             />
-            <div className={cn("px-3 py-1", collapsed && "px-1")}>
+            <div className={cn("px-3 py-1", collapsed && "md:px-1")}>
               <Separator />
             </div>
           </>
         )}
 
-        {/* Company section heading */}
-        {!collapsed && (
-          <p className="px-4 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            {isCIO ? "Subsidiaries" : companyName || "Company"}
-          </p>
-        )}
-
-        {/* Company links */}
-        {isCIO
-          ? COMPANY_KEYS.map((key) => {
+        {/* CIO: list all subsidiaries to navigate to */}
+        {isCIO && (
+          <>
+            <p className={cn(
+              "px-4 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground",
+              collapsed && "md:hidden"
+            )}>
+              Subsidiaries
+            </p>
+            {COMPANY_KEYS.map((key) => {
               const co     = COMPANIES[key]
               const href   = `/dashboard/${key}`
               const active = pathname.startsWith(href) && !isMaster
@@ -143,51 +188,46 @@ export function Sidebar({ userRole, userTabs, companyKey, companyName }: Sidebar
                 <NavItem
                   key={key}
                   href={href}
-                  label={co.name.split(" ")[0]}  // Short name
+                  label={co.name.split(" ")[0]}
                   icon={Building2}
                   active={active}
                   collapsed={collapsed}
                   logo={co.logo}
+                  onClose={onClose}
                 />
               )
-            })
-          : companyKey && (
-              <NavItem
-                href={`/dashboard/${companyKey}`}
-                label={companyName || companyKey.toUpperCase()}
-                icon={Building2}
-                active={!isMaster}
-                collapsed={collapsed}
-                logo={COMPANIES[companyKey as keyof typeof COMPANIES]?.logo}
-              />
-            )
-        }
-
-        {/* Tab navigation for current company page */}
-        {!isMaster && userTabs.length > 0 && (
-          <>
-            <div className={cn("px-3 py-1", collapsed && "px-1")}>
+            })}
+            <div className={cn("px-3 py-1", collapsed && "md:px-1")}>
               <Separator />
             </div>
-            {!collapsed && (
-              <p className="px-4 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Sections
-              </p>
-            )}
+          </>
+        )}
+
+        {/* Section tabs */}
+        {userTabs.length > 0 && (
+          <>
+            <p className={cn(
+              "px-4 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground",
+              collapsed && "md:hidden"
+            )}>
+              {isMaster ? "Dashboard" : "Sections"}
+            </p>
             {userTabs.map((tab) => {
-              const Icon     = TAB_ICONS[tab] ?? ShieldCheck
-              const tabPath  = companyKey
+              const Icon    = TAB_ICONS[tab] ?? ShieldCheck
+              const tabPath = companyKey
                 ? `/dashboard/${companyKey}?tab=${tab}`
                 : pathname
-              const isActive = activeTab === tab || (!activeTab && tab === userTabs[0])
+              const isActive =
+                activeTab === tab || (!activeTab && tab === userTabs[0])
               return (
                 <NavItem
                   key={tab}
                   href={tabPath}
                   label={tabLabel(tab)}
                   icon={Icon}
-                  active={isActive}
+                  active={isActive && !isMaster}
                   collapsed={collapsed}
+                  onClose={onClose}
                 />
               )
             })}
@@ -195,12 +235,52 @@ export function Sidebar({ userRole, userTabs, companyKey, companyName }: Sidebar
         )}
       </nav>
 
-      {/* Collapse toggle */}
+      {/* ── Footer: user card + logout ──────────────────────────────── */}
+      <div className="border-t">
+        {/* User info card — mimics Image 1 reference */}
+        <div className={cn(
+          "flex items-center gap-3 px-3 py-3",
+          collapsed && "md:justify-center md:px-0 md:py-3"
+        )}>
+          {/* Avatar circle */}
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary font-semibold text-sm select-none">
+            {userName ? userName.charAt(0).toUpperCase() : "U"}
+          </div>
+
+          {/* Name + role + company */}
+          <div className={cn("min-w-0 flex-1", collapsed && "md:hidden")}>
+            <p className="truncate text-sm font-semibold leading-tight">{userName}</p>
+            <p className="truncate text-[11px] text-muted-foreground leading-tight mt-0.5">
+              {roleLabel}
+              {companyName && (
+                <span className="before:content-['·'] before:mx-1">{companyShort}</span>
+              )}
+            </p>
+          </div>
+
+          {/* Chevron (decorative, like Image 1) */}
+          <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-muted-foreground", collapsed && "md:hidden")} />
+        </div>
+
+        {/* Logout row */}
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className={cn(
+            "flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium border-t",
+            "text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors",
+            collapsed && "md:justify-center md:px-0"
+          )}
+          title={collapsed ? "Sign out" : undefined}
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          <span className={cn("truncate", collapsed && "md:hidden")}>Sign Out</span>
+        </button>
+      </div>
+
+      {/* ── Collapse toggle (desktop only) ──────────────────────────── */}
       <button
         onClick={toggleCollapsed}
-        className={cn(
-          "absolute -right-3 top-16 z-10 flex h-6 w-6 items-center justify-center rounded-full border bg-background shadow-sm hover:bg-muted transition-colors"
-        )}
+        className="absolute -right-3 top-16 z-10 hidden h-6 w-6 items-center justify-center rounded-full border bg-background shadow-sm hover:bg-muted transition-colors md:flex"
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         {collapsed
@@ -212,23 +292,24 @@ export function Sidebar({ userRole, userTabs, companyKey, companyName }: Sidebar
   )
 }
 
-// ─── Individual nav item ───────────────────────────────────────────────────────
+// ─── Nav item ─────────────────────────────────────────────────────────────────
 interface NavItemProps {
   href:      string
   label:     string
   icon:      React.ElementType
   active:    boolean
   collapsed: boolean
+  onClose:   () => void
   logo?:     string
 }
 
-function NavItem({ href, label, icon: Icon, active, collapsed, logo }: NavItemProps) {
+function NavItem({ href, label, icon: Icon, active, collapsed, onClose, logo }: NavItemProps) {
   return (
-    <Link href={href} className="block px-2">
+    <Link href={href} className="block px-2" onClick={onClose}>
       <span
         className={cn(
           "flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors",
-          collapsed && "justify-center px-0",
+          collapsed && "md:justify-center md:px-0",
           active
             ? "bg-primary text-primary-foreground"
             : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -241,12 +322,12 @@ function NavItem({ href, label, icon: Icon, active, collapsed, logo }: NavItemPr
             alt={label}
             width={16}
             height={16}
-            className="h-4 w-4 object-contain rounded shrink-0"
+            className="h-4 w-4 shrink-0 rounded object-contain"
           />
         ) : (
           <Icon className="h-4 w-4 shrink-0" />
         )}
-        {!collapsed && <span className="truncate">{label}</span>}
+        <span className={cn("truncate", collapsed && "md:hidden")}>{label}</span>
       </span>
     </Link>
   )

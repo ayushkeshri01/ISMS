@@ -40,8 +40,8 @@ export const ROLE_ACCESS: Record<string, { access: string; tabs: string[] }> = {
   ADMIN_FACILITIES: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'certificates', 'users', 'trend', 'log'] },
   LEGAL: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'certificates', 'users', 'trend', 'log'] },
   MD_CEO: { access: 'read', tabs: ['exec', 'trend', 'log'] },
-  IT_EXECUTIVE: { access: 'maker', tabs: ['overview', 'my-controls', 'docs', 'trend', 'log'] },
-  HR_EXECUTIVE: { access: 'maker', tabs: ['overview', 'my-controls', 'docs', 'trend', 'log'] },
+  IT_EXECUTIVE: { access: 'maker', tabs: ['overview', 'my-controls', 'docs', 'review-schedule', 'trend', 'log'] },
+  HR_EXECUTIVE: { access: 'maker', tabs: ['overview', 'my-controls', 'docs', 'review-schedule', 'trend', 'log'] },
 };
 
 export const CONTROL_CATEGORIES = {

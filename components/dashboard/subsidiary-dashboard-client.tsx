@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -59,13 +59,6 @@ interface Props {
   }>
   userRole: string
   userTabs: string[]
-}
-
-function formatTabLabel(tab: string) {
-  return tab
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ")
 }
 
 export function SubsidiaryDashboardClient({
@@ -132,16 +125,7 @@ export function SubsidiaryDashboardClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleTabChange = (tabValue: string) => {
-    if (!effectiveTabs.includes(tabValue) || tabValue === activeTab) {
-      return
-    }
-    
-    const params = new URLSearchParams(searchParams.toString())
-    params.set("tab", tabValue)
-    router.push(`${pathname}?${params.toString()}`, { scroll: false })
-  }
-  
+
   const stats = {
     total: allControls.length,
     completed: allControls.filter((c: Control) => c.status === 'COMPLETED').length,
@@ -162,41 +146,27 @@ export function SubsidiaryDashboardClient({
   
   return (
     <div className="space-y-4">
-      <Tabs value={activeTab} onValueChange={(value) => handleTabChange(String(value))}>
-        {/* Tab bar — full width, scrollable on mobile */}
-        <div className="flex flex-col gap-3 mb-4">
-          <div className="flex justify-center overflow-x-auto">
-            <TabsList className="h-auto flex-wrap justify-center gap-0.5">
-              {effectiveTabs.map((tab) => (
-                <TabsTrigger key={tab} value={tab} className="px-3 py-1.5">
-                  {formatTabLabel(tab)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+      {/* Actions row */}
+      <div className="flex items-center justify-end gap-2">
+        {userRole === 'CIO' && (
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="cio-review-toggle"
+              checked={cioReviewEnabled}
+              onCheckedChange={(checked) => toggleCioReview(checked as boolean)}
+            />
+            <Label htmlFor="cio-review-toggle" className="text-sm cursor-pointer whitespace-nowrap">
+              Review Tab
+            </Label>
           </div>
+        )}
+        <Button variant="outline" size="sm" onClick={() => window.print()}>
+          <Printer className="h-4 w-4" />
+        </Button>
+      </div>
 
-          {/* Actions row */}
-          <div className="flex items-center justify-end gap-2">
-            {userRole === 'CIO' && (
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="cio-review-toggle"
-                  checked={cioReviewEnabled}
-                  onCheckedChange={(checked) => toggleCioReview(checked as boolean)}
-                />
-                <Label htmlFor="cio-review-toggle" className="text-sm cursor-pointer whitespace-nowrap">
-                  Review Tab
-                </Label>
-              </div>
-            )}
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {effectiveTabs.includes("overview") && (
-          <TabsContent value="overview" className="space-y-4">
+      {activeTab === "overview" && (
+        <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="pt-6">
@@ -282,11 +252,11 @@ export function SubsidiaryDashboardClient({
                 })}
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
         )}
 
-        {effectiveTabs.includes("exec") && (
-          <TabsContent value="exec" className="space-y-4">
+      {activeTab === "exec" && (
+        <div className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Compliance Trend</CardTitle>
@@ -295,40 +265,40 @@ export function SubsidiaryDashboardClient({
                 <TrendChart data={company?.complianceHistory} />
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
         )}
 
-        {effectiveTabs.includes("my-controls") && (
-          <TabsContent value="my-controls" className="space-y-4">
+      {activeTab === "my-controls" && (
+        <div className="space-y-4">
             <ControlAccordion
               controls={controls}
               companyKey={companyKey}
               userRole={userRole}
             />
-          </TabsContent>
+          </div>
         )}
 
-        {effectiveTabs.includes("docs") && (
-          <TabsContent value="docs" className="space-y-4">
+      {activeTab === "docs" && (
+        <div className="space-y-4">
             <MandatoryDocuments
               controls={allControls}
               evidence={company?.evidence}
               companyKey={companyKey}
             />
-          </TabsContent>
+          </div>
         )}
 
-        {effectiveTabs.includes("maker-controls") && (
-          <TabsContent value="maker-controls" className="space-y-4">
+      {activeTab === "maker-controls" && (
+        <div className="space-y-4">
             <EvidenceUpload
               controls={controls}
               companyKey={companyKey}
             />
-          </TabsContent>
-          )}
-        
-        {effectiveTabs.includes("trend") && (
-          <TabsContent value="trend" className="space-y-4">
+          </div>
+        )}
+      
+      {activeTab === "trend" && (
+        <div className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Compliance Trend (Monthly)</CardTitle>
@@ -337,38 +307,43 @@ export function SubsidiaryDashboardClient({
                 <TrendChart data={company?.complianceHistory} />
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
         )}
 
-        {effectiveTabs.includes("log") && (
-          <TabsContent value="log" className="space-y-4">
+      {activeTab === "log" && (
+        <div className="space-y-4">
             <ActivityLogTable logs={activityLogs} />
-          </TabsContent>
+          </div>
         )}
 
-        {effectiveTabs.includes("certificates") && (
-          <TabsContent value="certificates" className="space-y-4">
+      {activeTab === "certificates" && (
+        <div className="space-y-4">
             <CertificateForm
               certificates={company?.certificates}
               companyKey={companyKey}
             />
-          </TabsContent>
+          </div>
         )}
 
-        {effectiveTabs.includes("users") && (
-          <TabsContent value="users" className="space-y-4">
+      {activeTab === "users" && (
+        <div className="space-y-4">
             <UserManagement companyKey={companyKey} />
-          </TabsContent>
+          </div>
         )}
 
-        {effectiveTabs.includes("review") && (
-          <TabsContent value="review" className="space-y-4">
+      {activeTab === "review" && (
+        <div className="space-y-4">
             <EvidenceReview
               evidence={company?.evidence}
             />
-          </TabsContent>
+          </div>
         )}
-      </Tabs>
+
+      {activeTab === "review-schedule" && (
+        <div className="space-y-4">
+            <ReviewSchedule companyKey={companyKey} />
+          </div>
+        )}
     </div>
   )
 }

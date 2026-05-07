@@ -85,8 +85,8 @@ export default function LoginPage() {
     )
   }
 
-  // Already authenticated — render nothing while the redirect above fires
-  if (session) return null
+  // Already authenticated (has valid user data) — render nothing while the redirect above fires
+  if (session?.user) return null
 
   const isGroup   = selectedCompany === "group"
   const roleList  = isGroup ? GROUP_ROLES : SUBSIDIARY_ROLES

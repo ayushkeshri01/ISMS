@@ -1,10 +1,9 @@
 "use client"
 
-import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { NotificationBell } from "@/components/dashboard/notification-bell"
-import { LogOut, Menu } from "lucide-react"
+import { Menu } from "lucide-react"
 
 interface TopbarProps {
   companyName:        string | null
@@ -39,15 +38,6 @@ export function Topbar({
       <div className="flex shrink-0 items-center gap-1">
         <NotificationBell />
         <ThemeToggle />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          title="Sign out"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-        >
-          <LogOut className="h-4 w-4" />
-        </Button>
       </div>
     </header>
   )

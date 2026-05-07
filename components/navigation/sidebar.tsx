@@ -22,7 +22,6 @@ import {
   Building2,
   LogOut,
   X,
-  ChevronDown,
 } from "lucide-react"
 import { COMPANIES, COMPANY_KEYS } from "@/lib/constants"
 
@@ -235,9 +234,8 @@ export function Sidebar({
         )}
       </nav>
 
-      {/* ── Footer: user card + logout ──────────────────────────────── */}
+      {/* ── Footer: user card with inline logout ────────────────────── */}
       <div className="border-t">
-        {/* User info card — mimics Image 1 reference */}
         <div className={cn(
           "flex items-center gap-3 px-3 py-3",
           collapsed && "md:justify-center md:px-0 md:py-3"
@@ -258,23 +256,19 @@ export function Sidebar({
             </p>
           </div>
 
-          {/* Chevron (decorative, like Image 1) */}
-          <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-muted-foreground", collapsed && "md:hidden")} />
+          {/* Logout icon (replaces down arrow) */}
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className={cn(
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
+              "text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors",
+              collapsed && "md:hidden"
+            )}
+            title="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
-
-        {/* Logout row */}
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className={cn(
-            "flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium border-t",
-            "text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors",
-            collapsed && "md:justify-center md:px-0"
-          )}
-          title={collapsed ? "Sign out" : undefined}
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          <span className={cn("truncate", collapsed && "md:hidden")}>Sign Out</span>
-        </button>
       </div>
 
       {/* ── Collapse toggle (desktop only) ──────────────────────────── */}

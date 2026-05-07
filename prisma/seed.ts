@@ -134,32 +134,7 @@ const ANNEX_A_8_CONTROLS = [
 ]
 
 async function main() {
-  const existingUsers = await prisma.user.count()
-  if (existingUsers > 0) {
-    console.log("Users already exist, adding descriptions to controls...")
-    
-    const allControls = [
-      ...CLAUSE_CONTROLS,
-      ...ANNEX_A_5_CONTROLS,
-      ...ANNEX_A_6_CONTROLS,
-      ...ANNEX_A_7_CONTROLS,
-      ...ANNEX_A_8_CONTROLS,
-    ]
-    
-    const companies = await prisma.company.findMany()
-    
-    for (const company of companies) {
-      for (const ctrl of allControls) {
-        await prisma.control.updateMany({
-          where: { companyId: company.id, controlId: ctrl.controlId },
-          data: { description: ctrl.description || null },
-        })
-      }
-    }
-    
-    console.log("Updated descriptions for all controls")
-    return
-  }
+  console.log("Seeding database (fresh)…")
 
   const companiesData = [
     { key: "ecocat", name: "ECOCAT India Pvt Ltd", logo: "/logos/ecologo.jpg" },
@@ -175,23 +150,36 @@ async function main() {
   }
 
   const users = [
-    { pin: "2701", name: "CIO / Group IT Head", role: "CIO", department: "IT" },
-    { pin: "2702", name: "IT Manager - ECOCAT", role: "IT_MANAGER", department: "IT", companyKey: "ecocat" },
-    { pin: "2703", name: "IT Manager - PRANAV", role: "IT_MANAGER", department: "IT", companyKey: "pranav" },
-    { pin: "2704", name: "IT Manager - SANDEN", role: "IT_MANAGER", department: "IT", companyKey: "sanden" },
-    { pin: "2705", name: "IT Manager - SATA", role: "IT_MANAGER", department: "IT", companyKey: "sata" },
-    { pin: "3801", name: "HR Manager", role: "HR_MANAGER", department: "HR" },
-    { pin: "4901", name: "Admin / Facilities", role: "ADMIN_FACILITIES", department: "ADMIN" },
-    { pin: "5012", name: "Legal / Compliance", role: "LEGAL", department: "LEGAL" },
-    { pin: "9001", name: "MD / CEO", role: "MD_CEO", department: "FINANCE" },
-    { pin: "1101", name: "IT Executive - ECOCAT", role: "IT_EXECUTIVE", department: "IT", companyKey: "ecocat" },
-    { pin: "1102", name: "IT Executive - PRANAV", role: "IT_EXECUTIVE", department: "IT", companyKey: "pranav" },
-    { pin: "1103", name: "IT Executive - SANDEN", role: "IT_EXECUTIVE", department: "IT", companyKey: "sanden" },
-    { pin: "1104", name: "IT Executive - SATA", role: "IT_EXECUTIVE", department: "IT", companyKey: "sata" },
-    { pin: "1201", name: "HR Executive - ECOCAT", role: "HR_EXECUTIVE", department: "HR", companyKey: "ecocat" },
-    { pin: "1202", name: "HR Executive - PRANAV", role: "HR_EXECUTIVE", department: "HR", companyKey: "pranav" },
-    { pin: "1203", name: "HR Executive - SANDEN", role: "HR_EXECUTIVE", department: "HR", companyKey: "sanden" },
-    { pin: "1204", name: "HR Executive - SATA", role: "HR_EXECUTIVE", department: "HR", companyKey: "sata" },
+    // Group-level (no companyKey)
+    { pin: "2701", name: "CIO / Group IT Head",  role: "CIO",              department: "IT"      },
+    { pin: "3801", name: "HR Manager",            role: "HR_MANAGER",       department: "HR"      },
+    { pin: "4901", name: "Admin / Facilities",    role: "ADMIN_FACILITIES", department: "ADMIN"   },
+    { pin: "5012", name: "Legal / Compliance",    role: "LEGAL",            department: "LEGAL"   },
+    { pin: "9001", name: "MD / CEO",              role: "MD_CEO",           department: "FINANCE" },
+
+    // IT Managers per subsidiary
+    { pin: "2702", name: "IT Manager - ECOCAT",  role: "IT_MANAGER",   department: "IT",  companyKey: "ecocat" },
+    { pin: "2703", name: "IT Manager - PRANAV",  role: "IT_MANAGER",   department: "IT",  companyKey: "pranav" },
+    { pin: "2704", name: "IT Manager - SANDEN",  role: "IT_MANAGER",   department: "IT",  companyKey: "sanden" },
+    { pin: "2705", name: "IT Manager - SATA",    role: "IT_MANAGER",   department: "IT",  companyKey: "sata"   },
+
+    // STQM Managers per subsidiary
+    { pin: "3702", name: "STQM Manager - ECOCAT", role: "STQM_MANAGER", department: "STQM", companyKey: "ecocat" },
+    { pin: "3703", name: "STQM Manager - PRANAV", role: "STQM_MANAGER", department: "STQM", companyKey: "pranav" },
+    { pin: "3704", name: "STQM Manager - SANDEN", role: "STQM_MANAGER", department: "STQM", companyKey: "sanden" },
+    { pin: "3705", name: "STQM Manager - SATA",   role: "STQM_MANAGER", department: "STQM", companyKey: "sata"   },
+
+    // IT Executives per subsidiary
+    { pin: "1101", name: "IT Executive - ECOCAT",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "ecocat" },
+    { pin: "1102", name: "IT Executive - PRANAV",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "pranav" },
+    { pin: "1103", name: "IT Executive - SANDEN",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "sanden" },
+    { pin: "1104", name: "IT Executive - SATA",    role: "IT_EXECUTIVE",  department: "IT", companyKey: "sata"   },
+
+    // HR Executives per subsidiary
+    { pin: "1201", name: "HR Executive - ECOCAT",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "ecocat" },
+    { pin: "1202", name: "HR Executive - PRANAV",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "pranav" },
+    { pin: "1203", name: "HR Executive - SANDEN",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "sanden" },
+    { pin: "1204", name: "HR Executive - SATA",    role: "HR_EXECUTIVE",  department: "HR", companyKey: "sata"   },
   ]
 
   for (const user of users) {

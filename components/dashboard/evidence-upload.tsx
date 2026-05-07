@@ -140,7 +140,7 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
                 <select
                   value={formData.controlId}
                   onChange={(e) => setFormData(prev => ({ ...prev, controlId: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px', marginTop: '8px' }}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring mt-2"
                 >
                   <option value="">-- Select control --</option>
                   {filteredControls.map(c => (
@@ -157,7 +157,7 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
               <select
                 value={formData.evidenceType}
                 onChange={(e) => setFormData(prev => ({ ...prev, evidenceType: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px' }}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">-- Select type --</option>
                 {EVIDENCE_TYPES.map(type => (

@@ -69,10 +69,10 @@ export function EvidenceReview({ evidence = [] }: Props) {
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <Badge variant="outline" className="text-xs">{item.evidenceType}</Badge>
                 <span className="text-xs text-muted-foreground">by {item.uploadedByName}</span>
-                <Badge className={
-                  item.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                  item.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                  'bg-red-100 text-red-800'
+                <Badge variant={
+                  item.status === 'APPROVED' ? 'default' :
+                  item.status === 'REJECTED' ? 'destructive' :
+                  'secondary'
                 }>
                   {item.status}
                 </Badge>

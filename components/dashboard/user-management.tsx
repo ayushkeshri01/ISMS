@@ -100,7 +100,7 @@ export function UserManagement({ companyKey }: Props) {
         </Button>
         {showAddForm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="bg-background border rounded-lg p-6 max-w-md w-full shadow-xl">
               <h3 className="text-lg font-semibold mb-4">Add Custom User</h3>
               <form onSubmit={handleAddUser} className="space-y-4">
                 <div className="space-y-2">

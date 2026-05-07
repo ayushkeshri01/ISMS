@@ -109,5 +109,17 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true, schedule: updated })
   }
 
+  if (action === "unmark-reviewed") {
+    const updated = await prisma.reviewSchedule.update({
+      where: { id: scheduleId },
+      data: {
+        lastReviewedAt: null,
+        nextReviewAt: null,
+        updatedById: session.user.id,
+      },
+    })
+    return NextResponse.json({ success: true, schedule: updated })
+  }
+
   return NextResponse.json({ error: "Invalid action" }, { status: 400 })
 }

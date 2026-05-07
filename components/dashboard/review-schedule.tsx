@@ -169,6 +169,21 @@ export function ReviewSchedule({ companyKey }: Props) {
     }
   }
 
+  const handleUnmarkReviewed = async (scheduleId: string) => {
+    try {
+      const res = await fetch("/api/review-schedule", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scheduleId, companyKey, action: "unmark-reviewed" }),
+      })
+      if (!res.ok) throw new Error("Unmark failed")
+      toast.success("Review status cleared.")
+      await fetchSchedules()
+    } catch {
+      toast.error("Failed to unmark review")
+    }
+  }
+
   const openHistory = async (schedule: ScheduleItem) => {
     setHistoryDialog({ open: true, schedule, history: [] })
     setHistoryLoading(true)
@@ -488,15 +503,37 @@ export function ReviewSchedule({ companyKey }: Props) {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button
-                            variant={isReviewed ? "outline" : "default"}
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() => handleMarkReviewed(s.id)}
-                          >
-                            <CheckCircle2 className="mr-1 h-3 w-3" />
-                            {isReviewed ? "Re-review" : "Mark Reviewed"}
-                          </Button>
+                          {isReviewed ? (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => handleMarkReviewed(s.id)}
+                              >
+                                <CheckCircle2 className="mr-1 h-3 w-3" />
+                                Re-review
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => handleUnmarkReviewed(s.id)}
+                              >
+                                Unmark
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => handleMarkReviewed(s.id)}
+                            >
+                              <CheckCircle2 className="mr-1 h-3 w-3" />
+                              Mark Reviewed
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"

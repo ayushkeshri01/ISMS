@@ -9,11 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { COMPANIES, CONTROL_CATEGORIES } from "@/lib/constants"
-import { 
-  CheckCircle, Clock, XCircle,
-  BarChart3, Printer
-} from "lucide-react"
-import Image from "next/image"
+import { CheckCircle, Clock, XCircle, BarChart3, Printer } from "lucide-react"
 import { ControlAccordion } from "./control-accordion"
 import { EvidenceUpload } from "./evidence-upload"
 import { MandatoryDocuments } from "./mandatory-documents"
@@ -153,47 +149,38 @@ export function SubsidiaryDashboardClient({
   }
   
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Image src={companyInfo.logo} alt={companyInfo.name} width={48} height={48} className="h-12 w-12 object-contain rounded" />
-          <div>
-            <h1 className="text-2xl font-bold">
-              {companyKey.toUpperCase()} ISMS Dashboard
-            </h1>
-            <p className="text-sm text-muted-foreground">{companyInfo.name}</p>
-          </div>
-        </div>
-         
-        <div className="flex items-center gap-4">
-          {userRole === 'CIO' && (
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="cio-review-toggle"
-                checked={cioReviewEnabled}
-                onCheckedChange={(checked) => toggleCioReview(checked as boolean)}
-              />
-              <Label htmlFor="cio-review-toggle" className="text-sm cursor-pointer">
-                Enable Review Tab
-              </Label>
-            </div>
-          )}
-
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <Printer className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-        
+    <div className="space-y-4">
       <Tabs value={activeTab} onValueChange={(value) => handleTabChange(String(value))}>
-        <div className="mb-6 overflow-x-auto">
-          <TabsList>
-            {effectiveTabs.map((tab) => (
-              <TabsTrigger key={tab} value={tab}>
-                {formatTabLabel(tab)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        {/* Tab bar — full width, scrollable on mobile */}
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="overflow-x-auto">
+            <TabsList className="h-auto flex-wrap gap-0.5 w-full">
+              {effectiveTabs.map((tab) => (
+                <TabsTrigger key={tab} value={tab} className="px-3 py-1.5">
+                  {formatTabLabel(tab)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+
+          {/* Actions top-right */}
+          <div className="flex items-center gap-2 shrink-0">
+            {userRole === 'CIO' && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="cio-review-toggle"
+                  checked={cioReviewEnabled}
+                  onCheckedChange={(checked) => toggleCioReview(checked as boolean)}
+                />
+                <Label htmlFor="cio-review-toggle" className="text-sm cursor-pointer whitespace-nowrap">
+                  Review Tab
+                </Label>
+              </div>
+            )}
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {effectiveTabs.includes("overview") && (

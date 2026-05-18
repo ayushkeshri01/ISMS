@@ -20,12 +20,12 @@ const SAFE_DOWNLOAD_TYPES = [
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   
-  const { id } = params
+  const { id } = await params
   
   if (!id || typeof id !== 'string' || id.length > 100) {
     return NextResponse.json({ error: "Invalid ID" }, { status: 400 })

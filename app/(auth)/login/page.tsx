@@ -10,63 +10,34 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { AlertCircle, Building2, ShieldCheck } from "lucide-react"
+import { AlertCircle, Loader2, Mail, Lock, ShieldCheck, ArrowLeft } from "lucide-react"
 import Image from "next/image"
 
-// ─── Company catalogue ────────────────────────────────────────────────────────
-const COMPANIES = [
-  { key: "ecocat",  label: "ECOCAT India Pvt. Ltd.",     logo: "/logos/ecologo.jpg"     },
-  { key: "pranav",  label: "Pranav Vikas India Ltd.",     logo: "/logos/pranavlogo.png"  },
-  { key: "sanden",  label: "Sanden Vikas India Ltd.",     logo: "/logos/sandenlogo.jpg"  },
-  { key: "sata",    label: "SATA Vikas India Ltd.",       logo: "/logos/satalogo.webp"   },
-  { key: "group",   label: "Vikas Group (CIO / MD)",      logo: "/logos/vikasgrouplogo.png" },
-]
-
-// ─── Roles per company type ───────────────────────────────────────────────────
-const SUBSIDIARY_ROLES = [
-  { value: "IT_MANAGER",       label: "IT Manager"        },
-  { value: "STQM_MANAGER",     label: "STQM Manager"      },
-  { value: "IT_EXECUTIVE",     label: "IT Executive"      },
-  { value: "HR_EXECUTIVE",     label: "HR Executive"      },
-  { value: "ADMIN_FACILITIES", label: "Admin / Facilities" },
-  { value: "LEGAL",            label: "Legal / Compliance" },
-]
-
-const GROUP_ROLES = [
-  { value: "CIO",      label: "CIO / Group IT Head" },
-  { value: "MD_CEO",   label: "MD / CEO"            },
-  { value: "HR_MANAGER", label: "HR Manager"        },
-]
-
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function LoginPage() {
   const { data: session, status } = useSession()
 
-  // All hooks declared before any early return (Rules of Hooks)
-  const [selectedCompany, setSelectedCompany] = useState("")
-  const [selectedRole,    setSelectedRole]    = useState("")
-  const [pin,             setPin]             = useState(["", "", "", ""])
-  const [error,           setError]           = useState("")
-  const [loading,         setLoading]         = useState(false)
+  const [step, setStep] = useState<"credentials" | "otp">("credentials")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
 
-  const pinRefs = [
+  const [otp, setOtp] = useState(["", "", "", "", "", ""])
+  const [debugOtp, setDebugOtp] = useState("")
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [resending, setResending] = useState(false)
+
+  const otpRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
   ]
 
-  // Already logged in → redirect to the right dashboard directly
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
       const dest = session.user.companyKey
@@ -76,7 +47,6 @@ export default function LoginPage() {
     }
   }, [status, session])
 
-  // Show a spinner while the session is being resolved
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -85,80 +55,85 @@ export default function LoginPage() {
     )
   }
 
-  // Already authenticated (has valid user data) — render nothing while the redirect above fires
   if (session?.user) return null
 
-  const isGroup   = selectedCompany === "group"
-  const roleList  = isGroup ? GROUP_ROLES : SUBSIDIARY_ROLES
-  const pinReady  = selectedCompany !== "" && selectedRole !== ""
-  const pinFilled = pin.every((d) => d !== "")
+  const otpFilled = otp.every((d) => d !== "")
+  const maskedEmail = email.replace(/(.{2})(.*)(?=@)/, (_, a, b) => a + "*".repeat(b.length))
 
-  // Reset role when company changes
-  const handleCompanyChange = (value: string) => {
-    setSelectedCompany(value)
-    setSelectedRole("")
-    setPin(["", "", "", ""])
-    setError("")
-  }
-
-  const handleRoleChange = (value: string) => {
-    setSelectedRole(value)
-    setPin(["", "", "", ""])
-    setError("")
-    // Focus first PIN box
-    setTimeout(() => pinRefs[0].current?.focus(), 100)
-  }
-
-  const handlePinChange = (index: number, value: string) => {
-    if (!/^\d?$/.test(value)) return
-
-    const next = [...pin]
-    next[index] = value
-    setPin(next)
-    setError("")
-
-    if (value && index < 3) {
-      pinRefs[index + 1].current?.focus()
-    }
-
-    // Auto-submit when 4th digit entered
-    if (next.every((d) => d !== "") && value && index === 3) {
-      handleSubmit(next.join(""))
-    }
-  }
-
-  const handlePinKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !pin[index] && index > 0) {
-      pinRefs[index - 1].current?.focus()
-    }
-  }
-
-  const handleSubmit = async (pinValue: string) => {
-    if (!selectedCompany || !selectedRole) {
-      setError("Please select a company and role first.")
+  const handleCredentialsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email || !password) {
+      setError("Please enter your email and password.")
       return
     }
+
+    setLoading(true)
+    setError("")
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || "Invalid email or password.")
+        return
+      }
+
+      setDebugOtp(data.otp || "")
+      setStep("otp")
+      setTimeout(() => otpRefs[0].current?.focus(), 100)
+    } catch {
+      setError("Connection error. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d?$/.test(value)) return
+
+    const next = [...otp]
+    next[index] = value
+    setOtp(next)
+    setError("")
+
+    if (value && index < 5) {
+      otpRefs[index + 1].current?.focus()
+    }
+
+    if (next.every((d) => d !== "") && value && index === 5) {
+      handleOtpSubmit(next.join(""))
+    }
+  }
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpRefs[index - 1].current?.focus()
+    }
+  }
+
+  const handleOtpSubmit = async (otpValue: string) => {
     setLoading(true)
     setError("")
 
     try {
       const result = await signIn("credentials", {
-        pin:        pinValue,
-        companyKey: selectedCompany,
-        role:       selectedRole,
-        redirect:   false,
+        email: email.toLowerCase().trim(),
+        otp: otpValue,
+        redirect: false,
       })
 
       if (result?.error) {
-        setError("Invalid PIN for the selected company and role. Please try again.")
-        setPin(["", "", "", ""])
-        setTimeout(() => pinRefs[0].current?.focus(), 50)
+        setError("Invalid or expired OTP. Please try again.")
+        setOtp(["", "", "", "", "", ""])
+        setTimeout(() => otpRefs[0].current?.focus(), 50)
       } else {
-        // Redirect directly — we already know the companyKey from the form
-        const dest = selectedCompany === "group"
-          ? "/dashboard/master"
-          : `/dashboard/${selectedCompany}`
-        window.location.href = dest
+        window.location.href = "/dashboard/master"
       }
     } catch {
       setError("Connection error. Please try again.")
@@ -167,12 +142,43 @@ export default function LoginPage() {
     }
   }
 
-  const selectedCompanyInfo = COMPANIES.find((c) => c.key === selectedCompany)
+  const handleResend = async () => {
+    setResending(true)
+    setError("")
+    setOtp(["", "", "", "", "", ""])
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || "Failed to resend OTP.")
+        return
+      }
+
+      setDebugOtp(data.otp || "")
+      setTimeout(() => otpRefs[0].current?.focus(), 100)
+    } catch {
+      setError("Connection error. Please try again.")
+    } finally {
+      setResending(false)
+    }
+  }
+
+  const handleBack = () => {
+    setStep("credentials")
+    setError("")
+    setOtp(["", "", "", "", "", ""])
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
-        {/* Brand header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center">
             <Image
@@ -191,12 +197,23 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader className="pb-4">
+            {step === "otp" && (
+              <button
+                onClick={handleBack}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"
+              >
+                <ArrowLeft className="h-3 w-3" />
+                Back
+              </button>
+            )}
             <CardTitle className="flex items-center gap-2 text-lg">
               <ShieldCheck className="h-5 w-5 text-primary" />
-              Sign In
+              {step === "credentials" ? "Sign In" : "Verify OTP"}
             </CardTitle>
             <CardDescription>
-              Select your company and role, then enter your 4-digit PIN.
+              {step === "credentials"
+                ? "Enter your credentials to receive a one-time password."
+                : `Enter the 6-digit code sent to ${maskedEmail}`}
             </CardDescription>
           </CardHeader>
 
@@ -208,108 +225,113 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            {/* Step 1 — Company */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5">
-                <Building2 className="h-3.5 w-3.5" />
-                Company
-              </Label>
-              <Select
-                value={selectedCompany}
-                onValueChange={handleCompanyChange}
-                disabled={loading}
-              >
-                <SelectTrigger className="w-full justify-center text-center gap-1">
-                  <SelectValue placeholder="Select company…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {COMPANIES.map((c) => (
-                    <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {step === "credentials" ? (
+              <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5" />
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    autoFocus
+                    autoComplete="email"
+                  />
+                </div>
 
-            {/* Step 2 — Role (shown after company selected) */}
-            {selectedCompany && (
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <Select
-                  value={selectedRole}
-                  onValueChange={handleRoleChange}
-                  disabled={loading}
-                >
-                  <SelectTrigger className="w-full justify-center text-center gap-1">
-                    <SelectValue placeholder="Select role…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roleList.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="flex items-center gap-1.5">
+                    <Lock className="h-3.5 w-3.5" />
+                    Password
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    autoComplete="current-password"
+                  />
+                </div>
 
-            {/* Divider + Step 3 — PIN (shown after both selected) */}
-            {pinReady && (
-              <>
-                <Separator />
-
-                {/* Identity chip */}
-                {selectedCompanyInfo && (
-                  <div className="flex items-center gap-3 rounded-lg border bg-muted/40 px-3 py-2">
-                    <Image
-                      src={selectedCompanyInfo.logo}
-                      alt={selectedCompanyInfo.label}
-                      width={28}
-                      height={28}
-                      className="h-7 w-7 rounded object-contain"
-                    />
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium truncate">{selectedCompanyInfo.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {roleList.find((r) => r.value === selectedRole)?.label}
-                      </p>
-                    </div>
+                <Button type="submit" className="w-full" disabled={loading || !email || !password}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending OTP…
+                    </>
+                  ) : (
+                    "Continue"
+                  )}
+                </Button>
+              </form>
+            ) : (
+              <div className="space-y-5">
+                {debugOtp && (
+                  <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 px-3 py-2 text-center text-sm">
+                    <span className="text-muted-foreground">Dev OTP: </span>
+                    <span className="font-mono font-bold text-foreground tracking-widest">{debugOtp}</span>
                   </div>
                 )}
-
                 <div className="space-y-3">
-                  <Label>Enter 4-Digit PIN</Label>
-                  <div className="flex gap-3 justify-center">
-                    {[0, 1, 2, 3].map((idx) => (
+                  <Label>Enter 6-Digit OTP</Label>
+                  <div className="flex gap-2 justify-center">
+                    {[0, 1, 2, 3, 4, 5].map((idx) => (
                       <input
                         key={idx}
-                        ref={pinRefs[idx]}
-                        type="password"
+                        ref={otpRefs[idx]}
+                        type="text"
                         inputMode="numeric"
                         maxLength={1}
-                        value={pin[idx]}
-                        onChange={(e) => handlePinChange(idx, e.target.value)}
-                        onKeyDown={(e) => handlePinKeyDown(idx, e)}
+                        value={otp[idx]}
+                        onChange={(e) => handleOtpChange(idx, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                         disabled={loading}
                         autoFocus={idx === 0}
-                        className="w-14 h-14 rounded-lg border border-input bg-background text-center text-2xl font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="w-11 h-12 rounded-lg border border-input bg-background text-center text-xl font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       />
                     ))}
                   </div>
-
-                  <Button
-                    className="w-full"
-                    disabled={!pinFilled || loading}
-                    onClick={() => handleSubmit(pin.join(""))}
-                  >
-                    {loading ? "Signing in…" : "Sign In"}
-                  </Button>
                 </div>
-              </>
+
+                <Button
+                  className="w-full"
+                  disabled={!otpFilled || loading}
+                  onClick={() => handleOtpSubmit(otp.join(""))}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verifying…
+                    </>
+                  ) : (
+                    "Verify & Sign In"
+                  )}
+                </Button>
+
+                <p className="text-center text-sm text-muted-foreground">
+                  Didn&apos;t receive the code?{" "}
+                  <button
+                    onClick={handleResend}
+                    disabled={resending}
+                    className="font-medium text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {resending ? "Resending…" : "Resend OTP"}
+                  </button>
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          Vikas Group ISMS Portal &copy; {new Date().getFullYear()} &nbsp;·&nbsp; PIN-protected access
+          Vikas Group ISMS Portal &copy; {new Date().getFullYear()} &nbsp;·&nbsp; Secured with OTP
         </p>
       </div>
     </div>

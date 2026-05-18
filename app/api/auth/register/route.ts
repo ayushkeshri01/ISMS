@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import bcrypt from "bcryptjs"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { COMPANY_KEYS } from "@/lib/constants"
@@ -12,14 +13,24 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { pin, name, role, department, companyKey } = body
+    const { email, password, pin, name, role, department, companyKey } = body
 
     if (!body || typeof body !== 'object') {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 })
     }
 
-    if (!pin || !name || !role || !department) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    if (!email || !password || !pin || !name || !role || !department) {
+      return NextResponse.json({ error: "Missing required fields (email, password, pin, name, role, department)" }, { status: 400 })
+    }
+
+    const emailNormalized = email.toLowerCase().trim()
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalized)) {
+      return NextResponse.json({ error: "Invalid email format" }, { status: 400 })
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 })
     }
 
     if (!/^\d{4}$/.test(pin)) {
@@ -39,13 +50,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid company" }, { status: 400 })
     }
 
-    const existing = await prisma.user.findUnique({ where: { pin } })
-    if (existing) {
+    const existingPin = await prisma.user.findUnique({ where: { pin } })
+    if (existingPin) {
       return NextResponse.json({ error: "PIN already in use" }, { status: 400 })
     }
 
+    const existingEmail = await prisma.user.findUnique({ where: { email: emailNormalized } })
+    if (existingEmail) {
+      return NextResponse.json({ error: "Email already in use" }, { status: 400 })
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12)
+
     const user = await prisma.user.create({
       data: {
+        email: emailNormalized,
+        password: hashedPassword,
         pin,
         name: name.substring(0, 100),
         role,
@@ -56,7 +76,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ success: true, user: { id: user.id, name: user.name } })
+    return NextResponse.json({ success: true, user: { id: user.id, name: user.name, email: user.email } })
   } catch (error) {
     console.error('Register error:', error)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
@@ -103,6 +123,7 @@ export async function GET() {
     const users = await prisma.user.findMany({
       select: {
         id: true,
+        email: true,
         name: true,
         role: true,
         department: true,

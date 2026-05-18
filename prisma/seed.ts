@@ -1,5 +1,6 @@
 import "dotenv/config"
 import { PrismaClient } from "@prisma/client"
+import bcrypt from "bcryptjs"
 
 const prisma = new PrismaClient()
 
@@ -149,41 +150,43 @@ async function main() {
     createdCompanies.push(created)
   }
 
+  const defaultPassword = await bcrypt.hash("isms123", 12)
+
   const users = [
     // Group-level (no companyKey)
-    { pin: "2701", name: "CIO / Group IT Head",  role: "CIO",              department: "IT"      },
-    { pin: "3801", name: "HR Manager",            role: "HR_MANAGER",       department: "HR"      },
-    { pin: "4901", name: "Admin / Facilities",    role: "ADMIN_FACILITIES", department: "ADMIN"   },
-    { pin: "5012", name: "Legal / Compliance",    role: "LEGAL",            department: "LEGAL"   },
-    { pin: "9001", name: "MD / CEO",              role: "MD_CEO",           department: "FINANCE" },
+    { email: "cio@vikasgroup.com",          pin: "2701", name: "CIO / Group IT Head",  role: "CIO",              department: "IT"      },
+    { email: "hrmanager@vikasgroup.com",    pin: "3801", name: "HR Manager",            role: "HR_MANAGER",       department: "HR"      },
+    { email: "admin@vikasgroup.com",        pin: "4901", name: "Admin / Facilities",    role: "ADMIN_FACILITIES", department: "ADMIN"   },
+    { email: "legal@vikasgroup.com",        pin: "5012", name: "Legal / Compliance",    role: "LEGAL",            department: "LEGAL"   },
+    { email: "mdceo@vikasgroup.com",        pin: "9001", name: "MD / CEO",              role: "MD_CEO",           department: "FINANCE" },
 
     // IT Managers per subsidiary
-    { pin: "2702", name: "IT Manager - ECOCAT",  role: "IT_MANAGER",   department: "IT",  companyKey: "ecocat" },
-    { pin: "2703", name: "IT Manager - PRANAV",  role: "IT_MANAGER",   department: "IT",  companyKey: "pranav" },
-    { pin: "2704", name: "IT Manager - SANDEN",  role: "IT_MANAGER",   department: "IT",  companyKey: "sanden" },
-    { pin: "2705", name: "IT Manager - SATA",    role: "IT_MANAGER",   department: "IT",  companyKey: "sata"   },
+    { email: "itmanager.ecocat@vikasgroup.com", pin: "2702", name: "IT Manager - ECOCAT",  role: "IT_MANAGER",   department: "IT",  companyKey: "ecocat" },
+    { email: "itmanager.pranav@vikasgroup.com", pin: "2703", name: "IT Manager - PRANAV",  role: "IT_MANAGER",   department: "IT",  companyKey: "pranav" },
+    { email: "itmanager.sanden@vikasgroup.com", pin: "2704", name: "IT Manager - SANDEN",  role: "IT_MANAGER",   department: "IT",  companyKey: "sanden" },
+    { email: "itmanager.sata@vikasgroup.com",   pin: "2705", name: "IT Manager - SATA",    role: "IT_MANAGER",   department: "IT",  companyKey: "sata"   },
 
     // STQM Managers per subsidiary
-    { pin: "3702", name: "STQM Manager - ECOCAT", role: "STQM_MANAGER", department: "STQM", companyKey: "ecocat" },
-    { pin: "3703", name: "STQM Manager - PRANAV", role: "STQM_MANAGER", department: "STQM", companyKey: "pranav" },
-    { pin: "3704", name: "STQM Manager - SANDEN", role: "STQM_MANAGER", department: "STQM", companyKey: "sanden" },
-    { pin: "3705", name: "STQM Manager - SATA",   role: "STQM_MANAGER", department: "STQM", companyKey: "sata"   },
+    { email: "stqm.ecocat@vikasgroup.com", pin: "3702", name: "STQM Manager - ECOCAT", role: "STQM_MANAGER", department: "STQM", companyKey: "ecocat" },
+    { email: "stqm.pranav@vikasgroup.com", pin: "3703", name: "STQM Manager - PRANAV", role: "STQM_MANAGER", department: "STQM", companyKey: "pranav" },
+    { email: "stqm.sanden@vikasgroup.com", pin: "3704", name: "STQM Manager - SANDEN", role: "STQM_MANAGER", department: "STQM", companyKey: "sanden" },
+    { email: "stqm.sata@vikasgroup.com",   pin: "3705", name: "STQM Manager - SATA",   role: "STQM_MANAGER", department: "STQM", companyKey: "sata"   },
 
     // IT Executives per subsidiary
-    { pin: "1101", name: "IT Executive - ECOCAT",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "ecocat" },
-    { pin: "1102", name: "IT Executive - PRANAV",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "pranav" },
-    { pin: "1103", name: "IT Executive - SANDEN",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "sanden" },
-    { pin: "1104", name: "IT Executive - SATA",    role: "IT_EXECUTIVE",  department: "IT", companyKey: "sata"   },
+    { email: "itexec.ecocat@vikasgroup.com",  pin: "1101", name: "IT Executive - ECOCAT",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "ecocat" },
+    { email: "itexec.pranav@vikasgroup.com",  pin: "1102", name: "IT Executive - PRANAV",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "pranav" },
+    { email: "itexec.sanden@vikasgroup.com",  pin: "1103", name: "IT Executive - SANDEN",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "sanden" },
+    { email: "itexec.sata@vikasgroup.com",    pin: "1104", name: "IT Executive - SATA",    role: "IT_EXECUTIVE",  department: "IT", companyKey: "sata"   },
 
     // HR Executives per subsidiary
-    { pin: "1201", name: "HR Executive - ECOCAT",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "ecocat" },
-    { pin: "1202", name: "HR Executive - PRANAV",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "pranav" },
-    { pin: "1203", name: "HR Executive - SANDEN",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "sanden" },
-    { pin: "1204", name: "HR Executive - SATA",    role: "HR_EXECUTIVE",  department: "HR", companyKey: "sata"   },
+    { email: "hrexec.ecocat@vikasgroup.com",  pin: "1201", name: "HR Executive - ECOCAT",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "ecocat" },
+    { email: "hrexec.pranav@vikasgroup.com",  pin: "1202", name: "HR Executive - PRANAV",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "pranav" },
+    { email: "hrexec.sanden@vikasgroup.com",  pin: "1203", name: "HR Executive - SANDEN",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "sanden" },
+    { email: "hrexec.sata@vikasgroup.com",    pin: "1204", name: "HR Executive - SATA",    role: "HR_EXECUTIVE",  department: "HR", companyKey: "sata"   },
   ]
 
   for (const user of users) {
-    await prisma.user.create({ data: user })
+    await prisma.user.create({ data: { ...user, password: defaultPassword } })
   }
 
   const allControlsPerCompany = [

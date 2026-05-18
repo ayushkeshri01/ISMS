@@ -23,6 +23,7 @@ import {
   Activity,
   BarChart3,
   Calendar,
+  Settings,
 } from "lucide-react"
 import { COMPANIES, COMPANY_KEYS } from "@/lib/constants"
 
@@ -45,6 +46,7 @@ interface SidebarProps {
   companyKey:  string | null
   companyName: string | null
   userName:    string
+  userAccess:  string
   onClose:     () => void
 }
 
@@ -54,6 +56,7 @@ export function Sidebar({
   companyKey,
   companyName,
   userName,
+  userAccess,
   onClose,
 }: SidebarProps) {
   const pathname     = usePathname()
@@ -235,6 +238,23 @@ export function Sidebar({
           </>
         )}
       </nav>
+
+      {/* Settings — admin only */}
+      {userAccess === "write" && (
+        <div className="px-2">
+          <div className={cn("px-1 py-1", collapsed && "md:px-1")}>
+            <Separator />
+          </div>
+          <NavItem
+            href="/dashboard/settings"
+            label="Settings"
+            icon={Settings}
+            active={pathname === "/dashboard/settings"}
+            collapsed={collapsed}
+            onClose={onClose}
+          />
+        </div>
+      )}
 
       {/* ── Footer: user card + logout ──────────────────────────────── */}
       <div className="border-t">

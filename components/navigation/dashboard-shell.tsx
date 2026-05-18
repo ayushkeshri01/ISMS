@@ -57,6 +57,7 @@ export function DashboardShell({
             companyKey={companyKey}
             companyName={companyName}
             userName={userName}
+            userAccess={userAccess}
             onClose={() => setMobileOpen(false)}
           />
         </Suspense>

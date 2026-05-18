@@ -3,51 +3,46 @@ import Credentials from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import { ROLE_ACCESS } from "@/lib/constants"
 
-const VALID_ROLES = ['CIO', 'IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'ADMIN_FACILITIES', 'LEGAL', 'MD_CEO', 'IT_EXECUTIVE', 'HR_EXECUTIVE'] as const
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET || "",
   providers: [
     Credentials({
-      name: "PIN",
+      name: "OTP",
       credentials: {
-        pin:        { label: "PIN",        type: "password" },
-        companyKey: { label: "Company",    type: "text" },
-        role:       { label: "Role",       type: "text" },
+        email: { label: "Email", type: "email" },
+        otp:   { label: "OTP",   type: "text" },
       },
       async authorize(credentials) {
-        const pin        = (credentials?.pin        as string | undefined)?.trim()
-        const companyKey = (credentials?.companyKey as string | undefined)?.trim() || null
-        const role       = (credentials?.role       as string | undefined)?.trim()
+        const email = (credentials?.email as string | undefined)?.toLowerCase().trim()
+        const otp   = (credentials?.otp   as string | undefined)?.trim()
 
-        // All three required
-        if (!pin || !role) return null
+        if (!email || !otp) return null
 
-        // PIN must be exactly 4 digits
-        if (!/^\d{4}$/.test(pin)) return null
+        if (!/^\d{6}$/.test(otp)) return null
 
-        // Role must be in allowed list
-        if (!VALID_ROLES.includes(role as typeof VALID_ROLES[number])) return null
-
-        // Build strict where clause — companyKey is null for group-level roles
-        const whereClause =
-          companyKey && companyKey !== "group"
-            ? { pin, role, companyKey }
-            : { pin, role, companyKey: null }
-
-        const user = await prisma.user.findFirst({
-          where: whereClause,
+        const user = await prisma.user.findUnique({
+          where: { email },
           select: {
-            id:         true,
-            name:       true,
-            role:       true,
+            id: true,
+            name: true,
+            role: true,
             department: true,
             companyKey: true,
-            company:    { select: { name: true } },
+            otp: true,
+            otpExpiresAt: true,
+            company: { select: { name: true } },
           },
         })
 
         if (!user) return null
+        if (!user.otp || !user.otpExpiresAt) return null
+        if (user.otp !== otp) return null
+        if (new Date() > user.otpExpiresAt) return null
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { otp: null, otpExpiresAt: null, emailVerified: new Date() },
+        })
 
         const roleAccess =
           ROLE_ACCESS[user.role as keyof typeof ROLE_ACCESS] ||

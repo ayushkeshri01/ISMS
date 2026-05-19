@@ -59,7 +59,7 @@ export async function GET(
     : 'application/octet-stream'
   
   const filename = evidence.filename
-    .replace(/[\/\\]/g, '_')
+    .replace(/[^a-zA-Z0-9._-]/g, '_')
     .substring(0, 255)
   
   return new NextResponse(new Uint8Array(evidence.fileData), {

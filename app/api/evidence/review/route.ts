@@ -10,8 +10,7 @@ export async function POST(request: NextRequest) {
   }
   
   // Only specific roles can review
-  const VALID_REVIEWERS = ['CIO', 'IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER']
-  if (!VALID_REVIEWERS.includes(session.user.role as typeof VALID_REVIEWERS[number])) {
+  if (!['CIO', 'IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER'].includes(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -51,8 +50,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    await prisma.evidence.update({
-      where: { id: evidenceId },
+    const updated = await prisma.evidence.updateMany({
+      where: { id: evidenceId, status: 'PENDING' },
       data: {
         status,
         reviewedById: session.user.id,
@@ -60,6 +59,10 @@ export async function POST(request: NextRequest) {
         reviewNote: reviewNote ? reviewNote.substring(0, 500) : null
       }
     })
+
+    if (updated.count === 0) {
+      return NextResponse.json({ error: "Evidence already reviewed or not found" }, { status: 409 })
+    }
 
     try {
       await prisma.activityLog.create({
@@ -73,9 +76,8 @@ export async function POST(request: NextRequest) {
           details: reviewNote ? reviewNote.substring(0, 500) : null
         }
       })
-    } catch (err) {
-      console.error('Activity log error:', err)
-    }
+    } catch {
+      /* activity log is non-critical */ }
 
     if (evidence.uploadedById) {
       try {
@@ -87,14 +89,12 @@ export async function POST(request: NextRequest) {
             message: `Your evidence "${evidence.filename.substring(0, 100)}" has been ${statusText} by ${session.user.name}.${reviewNote ? ` Reason: ${reviewNote.substring(0, 200)}` : ''}`,
           }
         })
-      } catch (err) {
-        console.error('Failed to create notification:', err)
-      }
+      } catch {
+        /* notification is non-critical */ }
     }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Review error:', error)
+  } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

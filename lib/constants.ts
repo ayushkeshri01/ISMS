@@ -40,8 +40,8 @@ export const ROLE_ACCESS: Record<string, { access: string; tabs: string[] }> = {
   STQM_MANAGER: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'review', 'review-schedule', 'certificates', 'users', 'trend', 'log'] },
   HR_MANAGER: { access: 'write', tabs: ['overview', 'my-controls', 'docs', 'review', 'review-schedule', 'certificates', 'users', 'trend', 'log'] },
   MD_CEO: { access: 'read', tabs: ['exec', 'trend', 'log'] },
-  IT_EXECUTIVE: { access: 'maker', tabs: ['overview', 'my-controls', 'docs', 'review-schedule', 'trend', 'log'] },
-  HR_EXECUTIVE: { access: 'maker', tabs: ['overview', 'my-controls', 'docs', 'review-schedule', 'trend', 'log'] },
+  IT_EXECUTIVE: { access: 'maker', tabs: ['overview', 'my-controls', 'docs', 'my-uploads', 'review-schedule', 'trend', 'log'] },
+  HR_EXECUTIVE: { access: 'maker', tabs: ['overview', 'my-controls', 'docs', 'my-uploads', 'review-schedule', 'trend', 'log'] },
 };
 
 export const CONTROL_CATEGORIES = {
@@ -53,6 +53,24 @@ export const CONTROL_CATEGORIES = {
 };
 
 export const EVIDENCE_TYPES = ['Policy', 'Procedure', 'Register', 'Report', 'Screenshot', 'Certificate', 'Minutes', 'Contract', 'Training Records', 'Audit Report', 'Other'];
+
+export const STATUS_COLORS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  COMPLETED: "default",
+  APPROVED: "default",
+  IN_PROGRESS: "secondary",
+  PENDING: "secondary",
+  NOT_STARTED: "outline",
+  REJECTED: "destructive",
+  NA: "outline"
+};
+
+export const VALID_REVIEWERS = ['CIO', 'IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER'] as const;
+
+export const MAKER_ROLES = ['IT_EXECUTIVE', 'HR_EXECUTIVE'] as const;
+
+export const VALID_ROLES = ['IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'IT_EXECUTIVE', 'HR_EXECUTIVE'] as const;
+
+export const MANAGER_ROLES = ['CIO', 'IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'IT_EXECUTIVE', 'HR_EXECUTIVE', 'ADMIN', 'SUPER_ADMIN'] as const;
 
 export const CONTROL_DEFINITIONS = [
   { controlId: 'A.5.1', label: 'Policies for Information Security', category: 'annex_a_5', subCategory: null },

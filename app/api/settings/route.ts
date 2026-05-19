@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { encrypt, decrypt, isEncrypted } from "@/lib/crypto"
 
 const SETTING_KEYS = ["smtp_host", "smtp_port", "smtp_secure", "smtp_user", "smtp_pass", "smtp_from"] as const
 
@@ -16,7 +17,11 @@ export async function GET() {
 
   const result: Record<string, string> = {}
   for (const s of settings) {
-    result[s.key] = s.value
+    if (s.key === "smtp_pass" && s.value && isEncrypted(s.value)) {
+      result[s.key] = decrypt(s.value)
+    } else {
+      result[s.key] = s.value
+    }
   }
 
   return NextResponse.json({ settings: result })
@@ -33,10 +38,14 @@ export async function PUT(request: Request) {
 
     for (const key of SETTING_KEYS) {
       if (body[key] !== undefined) {
+        let value = String(body[key])
+        if (key === "smtp_pass" && value) {
+          value = encrypt(value)
+        }
         await prisma.setting.upsert({
           where: { key },
-          update: { value: String(body[key]) },
-          create: { key, value: String(body[key]) },
+          update: { value },
+          create: { key, value },
         })
       }
     }

@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { companyKey, body: certBody, number, validFrom, validTo, scope, isActive } = body
+  const { companyKey, body: certBody, number, validFrom, validTo, scope, isActive, fileData, fileType } = body
 
   // Validate required fields
    if (!companyKey || !COMPANY_KEYS.includes(companyKey as (typeof COMPANY_KEYS)[number])) {
@@ -63,6 +63,18 @@ export async function POST(request: NextRequest) {
 
   if (!validFrom || !validTo) {
     return NextResponse.json({ error: "Valid from/to required" }, { status: 400 })
+  }
+
+  if (isNaN(new Date(validFrom).getTime())) {
+    return NextResponse.json({ error: "Invalid validFrom date" }, { status: 400 })
+  }
+
+  if (isNaN(new Date(validTo).getTime())) {
+    return NextResponse.json({ error: "Invalid validTo date" }, { status: 400 })
+  }
+
+  if (new Date(validTo) <= new Date(validFrom)) {
+    return NextResponse.json({ error: "validTo must be after validFrom" }, { status: 400 })
   }
 
   if (!scope || typeof scope !== 'string' || scope.length > 500) {
@@ -86,6 +98,15 @@ export async function POST(request: NextRequest) {
     })
   }
 
+  let fileDataBuffer = null
+  if (fileData) {
+    const MAX_CERT_FILE_SIZE = 10 * 1024 * 1024
+    fileDataBuffer = Buffer.from(fileData as string, 'base64')
+    if (fileDataBuffer.length > MAX_CERT_FILE_SIZE) {
+      return NextResponse.json({ error: "Certificate file too large. Maximum 10MB." }, { status: 400 })
+    }
+  }
+
   const certificate = await prisma.certificate.create({
     data: {
       company: { connect: { key: companyKey } },
@@ -94,7 +115,9 @@ export async function POST(request: NextRequest) {
       validFrom: new Date(validFrom),
       validTo: new Date(validTo),
       scope: scope.substring(0, 500),
-      isActive: isActive || false
+      isActive: isActive || false,
+      fileData: fileDataBuffer,
+      fileType: fileType ? String(fileType).substring(0, 100) : null
     }
   })
 

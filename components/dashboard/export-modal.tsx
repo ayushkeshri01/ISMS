@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Download, FileArchive } from "lucide-react"
+import { Download } from "lucide-react"
+import { toast } from "sonner"
 
 type ExportType = "scores" | "monthly" | "yearly" | "evidence" | "full"
 
@@ -50,12 +51,11 @@ export function ExportModal({ companies }: ExportModalProps) {
             break
         }
       }
+      setOpen(false)
     } catch (error) {
       console.error("Export failed:", error)
-      alert("Export failed. Please try again.")
+      toast.error("Export failed: " + (error instanceof Error ? error.message : "Please try again."))
     }
-    
-    setOpen(false)
   }
 
   const exportAllEvidence = async () => {

@@ -118,6 +118,8 @@ export function MandatoryDocuments({ controls, evidence = [], companyKey }: Prop
   const [sortBy, setSortBy] = useState<string>("clause")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [groupFilter, setGroupFilter] = useState<string>("all")
+  const [localStatuses, setLocalStatuses] = useState<Record<string, string>>({})
+  const [pendingClauses, setPendingClauses] = useState<Set<string>>(new Set())
 
   // Memoize control map for O(1) lookups
   const controlMap = useMemo(() => {
@@ -179,9 +181,23 @@ export function MandatoryDocuments({ controls, evidence = [], companyKey }: Prop
     return map
   }, [clauseControlMap, evidenceMap])
 
+  // Merge local overrides into base statusMap
+  const effectiveStatusMap = useMemo(() => {
+    const merged = new Map(statusMap)
+    Object.entries(localStatuses).forEach(([k, v]) => merged.set(k, v))
+    return merged
+  }, [statusMap, localStatuses])
+
   const handleStatusChange = useCallback(async (clause: string, newStatus: string) => {
     const control = clauseControlMap.get(clause)
     if (!control) return
+    if (pendingClauses.has(clause)) return
+
+    const prevStatus = localStatuses[clause] || statusMap.get(clause) || "NOT_STARTED"
+    if (prevStatus === newStatus) return
+
+    setPendingClauses(prev => new Set(prev).add(clause))
+    setLocalStatuses(prev => ({ ...prev, [clause]: newStatus }))
 
     try {
       const res = await fetch(`/api/controls`, {
@@ -192,17 +208,26 @@ export function MandatoryDocuments({ controls, evidence = [], companyKey }: Prop
       
       if (res.ok) {
         router.refresh()
+      } else {
+        setLocalStatuses(prev => ({ ...prev, [clause]: prevStatus }))
       }
     } catch (err) {
       console.error('Failed to update status:', err)
+      setLocalStatuses(prev => ({ ...prev, [clause]: prevStatus }))
+    } finally {
+      setPendingClauses(prev => {
+        const next = new Set(prev)
+        next.delete(clause)
+        return next
+      })
     }
-  }, [companyKey, router, clauseControlMap])
+  }, [companyKey, router, clauseControlMap, localStatuses, statusMap, pendingClauses])
 
   // Memoize filtered and sorted docs
   const processedDocs = useMemo(() => {
     const docs = MANDATORY_DOCS.filter(doc => {
       if (statusFilter !== "all") {
-        const status = statusMap.get(doc.clause) || "NOT_STARTED"
+        const status = effectiveStatusMap.get(doc.clause) || "NOT_STARTED"
         if (statusFilter === "linked") return status !== "NOT_STARTED"
         if (statusFilter === "not_started") return status === "NOT_STARTED"
       }
@@ -219,13 +244,13 @@ export function MandatoryDocuments({ controls, evidence = [], companyKey }: Prop
       if (sortBy === "name") return a.name.localeCompare(b.name)
       if (sortBy === "status") {
         const statusOrder: Record<string, number> = { "COMPLETED": 0, "IN_PROGRESS": 1, "NOT_STARTED": 2 }
-        const aStatus = statusMap.get(a.clause) || "NOT_STARTED"
-        const bStatus = statusMap.get(b.clause) || "NOT_STARTED"
+        const aStatus = effectiveStatusMap.get(a.clause) || "NOT_STARTED"
+        const bStatus = effectiveStatusMap.get(b.clause) || "NOT_STARTED"
         return (statusOrder[aStatus] ?? 3) - (statusOrder[bStatus] ?? 3)
       }
       return 0
     })
-  }, [statusFilter, groupFilter, sortBy, statusMap])
+  }, [statusFilter, groupFilter, sortBy, effectiveStatusMap])
 
   // Memoize grouped docs
   const groupedDocs = useMemo(() => {
@@ -281,9 +306,10 @@ export function MandatoryDocuments({ controls, evidence = [], companyKey }: Prop
             </h4>
             <div className="grid gap-3">
               {docs.map((doc) => {
-                const status = statusMap.get(doc.clause) || "NOT_STARTED"
+                const status = effectiveStatusMap.get(doc.clause) || "NOT_STARTED"
                 const isLinked = status !== "NOT_STARTED"
                 const control = clauseControlMap.get(doc.clause)
+                const isPending = pendingClauses.has(doc.clause)
 
                 return (
                   <Card key={doc.name} className="bg-muted/30">
@@ -306,7 +332,7 @@ export function MandatoryDocuments({ controls, evidence = [], companyKey }: Prop
                           />
                           <Dialog>
                             <DialogTrigger render={(props) => (
-                              <Button variant={isLinked ? "outline" : "default"} size="sm" {...props}>
+                              <Button variant={isLinked ? "outline" : "default"} size="sm" disabled={isPending} {...props}>
                                 <Upload className="h-4 w-4 mr-2" />
                                 {isLinked ? "View" : "Upload"}
                               </Button>
@@ -331,9 +357,10 @@ export function MandatoryDocuments({ controls, evidence = [], companyKey }: Prop
       ) : (
         <div className="grid gap-3">
           {processedDocs.map((doc) => {
-            const status = statusMap.get(doc.clause) || "NOT_STARTED"
+            const status = effectiveStatusMap.get(doc.clause) || "NOT_STARTED"
             const isLinked = status !== "NOT_STARTED"
             const control = clauseControlMap.get(doc.clause)
+            const isPending = pendingClauses.has(doc.clause)
 
             return (
               <Card key={doc.name} className="bg-muted/30">
@@ -356,7 +383,7 @@ export function MandatoryDocuments({ controls, evidence = [], companyKey }: Prop
                       />
                       <Dialog>
                         <DialogTrigger render={(props) => (
-                          <Button variant={isLinked ? "outline" : "default"} size="sm" {...props}>
+                          <Button variant={isLinked ? "outline" : "default"} size="sm" disabled={isPending} {...props}>
                             <Upload className="h-4 w-4 mr-2" />
                             {isLinked ? "View" : "Upload"}
                           </Button>

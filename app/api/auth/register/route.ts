@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { COMPANY_KEYS } from "@/lib/constants"
+import { COMPANY_KEYS, VALID_ROLES } from "@/lib/constants"
 
 export async function POST(request: NextRequest) {
   const session = await auth()
@@ -37,8 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Field too long" }, { status: 400 })
     }
 
-    const VALID_ROLES = ['IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'IT_EXECUTIVE', 'HR_EXECUTIVE']
-    if (!VALID_ROLES.includes(role)) {
+    if (!VALID_ROLES.includes(role as typeof VALID_ROLES[number])) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 })
     }
 
@@ -135,7 +134,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const updateData: Record<string, string> = {}
+    const updateData: Record<string, string | undefined> = {}
 
     if (email !== undefined) {
       const emailNormalized = email.toLowerCase().trim()
@@ -157,8 +156,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (role !== undefined) {
-      const VALID_ROLES = ['IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'IT_EXECUTIVE', 'HR_EXECUTIVE']
-      if (!VALID_ROLES.includes(role)) {
+      if (!VALID_ROLES.includes(role as typeof VALID_ROLES[number])) {
         return NextResponse.json({ error: "Invalid role" }, { status: 400 })
       }
       updateData.role = role

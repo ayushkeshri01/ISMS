@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
   const [step, setStep] = useState<"email" | "otp" | "reset">("email")
   const [email, setEmail] = useState("")
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
-  const [debugOtp, setDebugOtp] = useState("")
+
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
@@ -63,7 +63,6 @@ export default function ForgotPasswordPage() {
         return
       }
 
-      setDebugOtp(data.otp || "")
       setStep("otp")
       setTimeout(() => otpRefs[0].current?.focus(), 100)
     } catch {
@@ -240,12 +239,6 @@ export default function ForgotPasswordPage() {
 
             {step === "otp" && (
               <div className="space-y-5">
-                {debugOtp && (
-                  <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 px-3 py-2 text-center text-sm">
-                    <span className="text-muted-foreground">Dev OTP: </span>
-                    <span className="font-mono font-bold text-foreground tracking-widest">{debugOtp}</span>
-                  </div>
-                )}
                 <div className="space-y-3">
                   <Label>Enter 6-Digit OTP</Label>
                   <div className="flex gap-2 justify-center">
@@ -261,6 +254,7 @@ export default function ForgotPasswordPage() {
                         onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                         disabled={loading}
                         autoFocus={idx === 0}
+                        aria-label={`Digit ${idx + 1} of OTP`}
                         className="w-11 h-12 rounded-lg border border-input bg-background text-center text-xl font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       />
                     ))}

@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer"
 import { prisma } from "@/lib/prisma"
+import { decrypt, isEncrypted } from "@/lib/crypto"
 
 async function getSmtpConfig() {
   const settings = await prisma.setting.findMany({
@@ -9,12 +10,15 @@ async function getSmtpConfig() {
   const map: Record<string, string> = {}
   for (const s of settings) map[s.key] = s.value
 
+  const storedPass = map.smtp_pass || process.env.SMTP_PASS || ""
+  const pass = storedPass && isEncrypted(storedPass) ? decrypt(storedPass) : storedPass
+
   return {
     host: map.smtp_host || process.env.SMTP_HOST || "",
     port: parseInt(map.smtp_port || process.env.SMTP_PORT || "587", 10),
     secure: (map.smtp_secure || process.env.SMTP_SECURE || "false") === "true",
     user: map.smtp_user || process.env.SMTP_USER || "",
-    pass: map.smtp_pass || process.env.SMTP_PASS || "",
+    pass,
     from: map.smtp_from || process.env.SMTP_FROM || "noreply@vikasgroup.in",
   }
 }

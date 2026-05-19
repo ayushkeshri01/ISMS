@@ -188,7 +188,7 @@ export default function ChangePasswordPage() {
                     </span>
                   </div>
                   <p className="text-[10px] text-muted-foreground">
-                    Use 8+ chars with uppercase, number &amp; symbol for a strong password
+                    Use 6+ chars with uppercase, number &amp; symbol for a strong password
                   </p>
                 </div>
               )}

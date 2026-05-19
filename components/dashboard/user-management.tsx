@@ -14,8 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Trash2, Plus, User, Pencil, X, Check, Loader2 } from "lucide-react"
+import { Trash2, Plus, User, Pencil, X, Check } from "lucide-react"
 import { toast } from "sonner"
+import { VALID_ROLES } from "@/lib/constants"
 import {
   Dialog,
   DialogContent,
@@ -38,7 +39,6 @@ interface Props {
   companyKey: string
 }
 
-const ROLES = ['IT_EXECUTIVE', 'HR_EXECUTIVE']
 const DEPARTMENTS = ['IT', 'HR', 'FINANCE', 'OPERATIONS', 'QUALITY']
 
 export function UserManagement({ companyKey }: Props) {
@@ -90,13 +90,17 @@ export function UserManagement({ companyKey }: Props) {
   }
 
   const handleDeleteUser = async (userId: string) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return
-
     try {
-      await fetch(`/api/auth/register?id=${userId}`, { method: "DELETE" })
-      fetchUsers()
-    } catch (err) {
-      console.error('Failed to delete user:', err)
+      const res = await fetch(`/api/auth/register?id=${userId}`, { method: "DELETE" })
+      if (res.ok) {
+        toast.success("User deleted successfully")
+        fetchUsers()
+      } else {
+        const data = await res.json()
+        toast.error("Error: " + (data.error || "Failed to delete user"))
+      }
+    } catch {
+      toast.error("Failed to delete user")
     }
   }
 
@@ -124,7 +128,7 @@ export function UserManagement({ companyKey }: Props) {
         setEditingId(null)
         fetchUsers()
       } else {
-        alert("Error: " + (data.error || "Failed to update user"))
+        toast.error("Error: " + (data.error || "Failed to update user"))
       }
     } catch (err) {
       console.error('Failed to update user:', err)
@@ -185,7 +189,7 @@ export function UserManagement({ companyKey }: Props) {
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      {ROLES.map(role => (
+                      {VALID_ROLES.map(role => (
                         <SelectItem key={role} value={role}>{role.replace(/_/g, ' ')}</SelectItem>
                       ))}
                     </SelectContent>

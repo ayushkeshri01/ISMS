@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Plus, FileText, Upload, X, CalendarIcon } from "lucide-react"
+import { Plus, FileText, Upload, X, CalendarIcon, ExternalLink } from "lucide-react"
+import { toast } from "sonner"
 import { formatDate, cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
@@ -54,7 +55,7 @@ export function CertificateForm({ certificates = [], companyKey }: Props) {
     const selectedFile = e.target.files?.[0]
     if (selectedFile) {
       if (selectedFile.size > 10 * 1024 * 1024) {
-        alert("File size must be less than 10MB")
+        toast.error("File size must be less than 10MB")
         return
       }
       setFormData(prev => ({ ...prev, certificateFile: selectedFile }))
@@ -76,7 +77,7 @@ export function CertificateForm({ certificates = [], companyKey }: Props) {
         fileType = formData.certificateFile.type
       }
       
-      await fetch("/api/certificates", {
+      const res = await fetch("/api/certificates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -88,12 +89,19 @@ export function CertificateForm({ certificates = [], companyKey }: Props) {
           fileType
         })
       })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown error" }))
+        toast.error("Failed: " + (err.error || "Server error"))
+        return
+      }
       
+      toast.success("Certificate saved successfully!")
       setShowForm(false)
       setFormData({ body: "", number: "", validFrom: "", validTo: "", scope: "", isActive: false, surveillanceAudit1: "", surveillanceAudit2: "", certificateFile: null })
       router.refresh()
     } catch {
-      alert("Failed to save certificate")
+      toast.error("Failed to save certificate")
     } finally {
       setUploading(false)
     }
@@ -261,7 +269,7 @@ export function CertificateForm({ certificates = [], companyKey }: Props) {
                 <Label htmlFor="isActive">Set as current active certificate</Label>
               </div>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button type="button" variant="outline" onClick={() => { setShowForm(false); if (fileInputRef.current) fileInputRef.current.value = '' }}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={uploading}>
@@ -297,11 +305,20 @@ export function CertificateForm({ certificates = [], companyKey }: Props) {
                         )}
                         <p className="text-sm text-muted-foreground mt-1">{cert.scope}</p>
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                     </div>
+                     <a
+                       href={`/api/certificates/view/${cert.id}`}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-input bg-background hover:bg-muted hover:text-foreground shrink-0"
+                       title="View Certificate"
+                     >
+                       <ExternalLink className="h-4 w-4" />
+                     </a>
+                   </div>
+                 </CardContent>
+               </Card>
+             ))}
             {certificates.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
                 <FileText className="h-12 w-12 mx-auto mb-3 opacity-40" />

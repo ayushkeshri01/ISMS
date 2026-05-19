@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { FileText, Check, X, Eye, ExternalLink, Inbox } from "lucide-react"
+import { toast } from "sonner"
+import { STATUS_COLORS } from "@/lib/constants"
 
 interface Evidence {
   id: string
@@ -38,7 +40,7 @@ export function EvidenceReview({ evidence = [] }: Props) {
   
   const handleReview = async (evidenceId: string, decision: 'APPROVED' | 'REJECTED') => {
     if (decision === 'REJECTED' && !reviewNote.trim()) {
-      alert("Please provide a reason for rejection")
+      toast.error("Please provide a reason for rejection")
       return
     }
     
@@ -71,11 +73,7 @@ export function EvidenceReview({ evidence = [] }: Props) {
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <Badge variant="outline" className="text-xs">{item.evidenceType}</Badge>
                 <span className="text-xs text-muted-foreground">by {item.uploadedByName}</span>
-                <Badge variant={
-                  item.status === 'APPROVED' ? 'default' :
-                  item.status === 'REJECTED' ? 'destructive' :
-                  'secondary'
-                }>
+                <Badge variant={STATUS_COLORS[item.status] || 'secondary'}>
                   {item.status}
                 </Badge>
               </div>

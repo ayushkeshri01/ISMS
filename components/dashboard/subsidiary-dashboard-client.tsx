@@ -15,6 +15,7 @@ import { ControlAccordion } from "./control-accordion"
 import { EvidenceUpload } from "./evidence-upload"
 import { MandatoryDocuments } from "./mandatory-documents"
 import { EvidenceReview } from "./evidence-review"
+import { MyUploads } from "./my-uploads"
 import { ActivityLogTable } from "./activity-log"
 import { TrendChart } from "./trend-chart"
 import { CertificateForm } from "./certificate-form"
@@ -77,13 +78,13 @@ export function SubsidiaryDashboardClient({
   const companyKeyLower = companyKey.toLowerCase()
   
   // All hooks must be called before any conditional returns
-  const [cioReviewEnabled, setCioReviewEnabled] = useState(false)
+  const [cioReviewEnabled, setCioReviewEnabled] = useState(true)
   
   useEffect(() => {
     if (userRole === 'CIO') {
       const stored = localStorage.getItem(`cio-review-${companyKeyLower}`)
       setTimeout(() => {
-        setCioReviewEnabled(stored === 'true')
+        setCioReviewEnabled(stored !== 'false')
       }, 0)
     }
   }, [userRole, companyKeyLower])
@@ -347,6 +348,12 @@ export function SubsidiaryDashboardClient({
               controls={controls}
               companyKey={companyKey}
             />
+          </div>
+        )}
+
+      {activeTab === "my-uploads" && (
+        <div className="space-y-4">
+            <MyUploads companyKey={companyKey} />
           </div>
         )}
       

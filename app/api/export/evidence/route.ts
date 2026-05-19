@@ -49,6 +49,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No evidence found" }, { status: 404 })
     }
 
+    if (evidence.length > 500) {
+      return NextResponse.json({ error: "Too many files to export. Please select fewer companies or contact admin." }, { status: 400 })
+    }
+
+    let totalSize = 0
+    for (const item of evidence) {
+      totalSize += item.fileData?.length || 0
+    }
+    if (totalSize > 500 * 1024 * 1024) {
+      return NextResponse.json({ error: "Total evidence size exceeds 500MB. Please export per-company instead." }, { status: 400 })
+    }
+
     const zip = new JSZip()
     
     for (const item of evidence) {

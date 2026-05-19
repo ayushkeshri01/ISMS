@@ -2,6 +2,7 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import { ROLE_ACCESS } from "@/lib/constants"
+import { rateLimit } from "@/lib/rate-limit"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET || "",
@@ -12,13 +13,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         otp:   { label: "OTP",   type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const email = (credentials?.email as string | undefined)?.toLowerCase().trim()
         const otp   = (credentials?.otp   as string | undefined)?.trim()
 
         if (!email || !otp) return null
 
         if (!/^\d{6}$/.test(otp)) return null
+
+        const ip = request?.headers?.get("x-forwarded-for") || request?.headers?.get("x-real-ip") || "unknown"
+        const { allowed } = rateLimit(ip)
+        if (!allowed) {
+          throw new Error("Too many attempts. Please try again later.")
+        }
 
         const user = await prisma.user.findUnique({
           where: { email },

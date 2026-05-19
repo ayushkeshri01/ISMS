@@ -1,23 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { COMPANY_KEYS } from "@/lib/constants"
+import { COMPANY_KEYS, MANAGER_ROLES } from "@/lib/constants"
 
 async function recordMonthlyHistory(companyId: string) {
   try {
     const now = new Date()
     const currentMonth = now.getMonth() + 1
     const currentYear = now.getFullYear()
-    
-    const existingRecord = await prisma.complianceHistory.findFirst({
-      where: {
-        companyId,
-        month: currentMonth,
-        year: currentYear
-      }
-    })
-    
-    if (existingRecord) return existingRecord
     
     const controls = await prisma.control.findMany({
       where: { companyId },
@@ -28,16 +18,19 @@ async function recordMonthlyHistory(companyId: string) {
     const completedCount = controls.filter((c: { status: string }) => c.status === "COMPLETED").length
     const score = totalControls > 0 ? Math.round((completedCount / totalControls) * 100) : 0
     
-    return await prisma.complianceHistory.create({
-      data: {
+    return await prisma.complianceHistory.upsert({
+      where: {
+        companyId_month_year: { companyId, month: currentMonth, year: currentYear }
+      },
+      update: { score },
+      create: {
         companyId,
         month: currentMonth,
         year: currentYear,
         score
       }
     })
-  } catch (error) {
-    console.error('recordMonthlyHistory error:', error)
+  } catch {
     return null
   }
 }
@@ -66,19 +59,13 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ controls })
 }
 
-const MANAGER_ROLES = ['CIO', 'IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'IT_EXECUTIVE', 'HR_EXECUTIVE', 'ADMIN', 'SUPER_ADMIN']
-
 export async function PATCH(request: NextRequest) {
   const session = await auth()
   if (!session?.user) {
-    console.log("PATCH: No session found")
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   
-  console.log("PATCH: User session:", { role: session.user.role, access: session.user.access, companyKey: session.user.companyKey })
-  
-  const hasWriteAccess = session.user.access === 'write' || MANAGER_ROLES.includes(session.user.role)
-  console.log("PATCH: hasWriteAccess:", hasWriteAccess)
+  const hasWriteAccess = session.user.access === 'write' || (MANAGER_ROLES as readonly string[]).includes(session.user.role)
   
   if (!hasWriteAccess) {
     return NextResponse.json({ error: "Unauthorized - insufficient access" }, { status: 401 })
@@ -153,7 +140,7 @@ export async function PATCH(request: NextRequest) {
         toStatus: status,
         isLocal: false
       }
-    }).catch(err => console.error('Activity log error:', err)),
+    }).catch(() => { /* activity log is non-critical */ }),
     recordMonthlyHistory(company.id)
   ])
   

@@ -99,7 +99,9 @@ export default function SettingsPage() {
     )
   }
 
-  if (session?.user?.access !== "write") return null
+  if (session?.user?.access !== "write") {
+    redirect("/dashboard/master")
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">

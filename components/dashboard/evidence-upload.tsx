@@ -32,9 +32,21 @@ interface Props {
   preselectedControl?: string
 }
 
+const ALLOWED_MIMES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'image/jpeg',
+  'image/png',
+  'image/gif'
+]
+
 export function EvidenceUpload({ controls, companyKey, preselectedControl }: Props) {
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [formData, setFormData] = useState({
     controlId: preselectedControl || "",
     title: "",
@@ -44,22 +56,33 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
     dateOfDocument: ""
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
+
+  const validateFile = (selectedFile: File): boolean => {
+    if (selectedFile.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB")
+      return false
+    }
+    if (!ALLOWED_MIMES.includes(selectedFile.type)) {
+      toast.error("Invalid file type. Allowed: PDF, Word, Excel, Images.")
+      return false
+    }
+    return true
+  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (selectedFile) {
-      if (selectedFile.size > 5 * 1024 * 1024) {
-        toast.error("File size must be less than 5MB")
-        return
+      if (validateFile(selectedFile)) {
+        setFile(selectedFile)
       }
-      setFile(selectedFile)
     }
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     const droppedFile = e.dataTransfer.files?.[0]
-    if (droppedFile && droppedFile.size <= 5 * 1024 * 1024) {
+    if (droppedFile && validateFile(droppedFile)) {
       setFile(droppedFile)
     }
   }
@@ -70,21 +93,36 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
       return
     }
     
+    if (abortRef.current) {
+      abortRef.current.abort()
+    }
+    abortRef.current = new AbortController()
+
     setUploading(true)
+    setUploadProgress(0)
     
     try {
-      // Convert file to base64
+      // Convert file to base64 with progress tracking
+      setUploadProgress(10)
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = () => {
           const result = reader.result as string
-          // Remove data:mime;base64, prefix
           const base64Data = result.split(',')[1]
           resolve(base64Data)
         }
         reader.onerror = () => reject(new Error("File reading failed"))
+        reader.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(10 + Math.round((e.loaded / e.total) * 40))
+          }
+        }
         reader.readAsDataURL(file)
       })
+      
+      setUploadProgress(55)
+      
+      const timeoutId = setTimeout(() => abortRef.current?.abort(), 60000)
       
       const response = await fetch("/api/evidence", {
         method: "POST",
@@ -101,21 +139,33 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
           referenceNo: formData.referenceNo,
           version: formData.version,
           dateOfDocument: formData.dateOfDocument || null
-        })
+        }),
+        signal: abortRef.current.signal
       })
       
+      clearTimeout(timeoutId)
+      setUploadProgress(100)
+      
       if (response.ok) {
-        toast.success("Evidence uploaded successfully!")
+        const result = await response.json()
+        toast.success(result.duplicate ? "Evidence updated (re-upload)!" : "Evidence uploaded successfully!")
         setFile(null)
         setFormData({ controlId: "", title: "", referenceNo: "", evidenceType: "", version: "", dateOfDocument: "" })
+        if (fileInputRef.current) fileInputRef.current.value = ''
       } else {
         const error = await response.json().catch(() => ({ error: "Unknown error" }))
         toast.error("Upload failed: " + (error.error || "Server error"))
       }
     } catch (err) {
-      toast.error("Upload error: " + (err instanceof Error ? err.message : "Unknown"))
+      if ((err as Error).name === 'AbortError') {
+        toast.error("Upload timed out. Please try again.")
+      } else {
+        toast.error("Upload error: " + (err instanceof Error ? err.message : "Unknown"))
+      }
     } finally {
       setUploading(false)
+      setUploadProgress(0)
+      abortRef.current = null
     }
   }
 
@@ -265,6 +315,17 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
             )}
           </div>
           
+          {uploading && (
+            <div className="space-y-1">
+              <div className="w-full bg-muted rounded-full h-2.5">
+                <div
+                  className="bg-primary h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground text-center">{uploadProgress}%</p>
+            </div>
+          )}
           <Button
             className="w-full"
             disabled={!file || !formData.controlId || !formData.evidenceType || uploading}

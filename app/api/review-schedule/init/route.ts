@@ -180,35 +180,51 @@ export async function POST(request: NextRequest) {
     orderBy: { controlId: "asc" },
   })
 
-  let created = 0
-  let updated = 0
+  const existingSchedules = await prisma.reviewSchedule.findMany({
+    where: { companyId: company.id },
+  })
+  const existingMap = new Map(existingSchedules.map(s => [s.controlId, s]))
+
+  const toCreate: Array<{
+    controlId: string
+    companyId: string
+    frequency: string
+    suggestedFrequency: string
+  }> = []
+  const toUpdate: Array<{ id: string; suggestedFrequency: string }> = []
 
   for (const control of controls) {
     const suggested = determineFrequency(control.controlId, control.label, control.description, control.category)
-    const existing = await prisma.reviewSchedule.findUnique({
-      where: { controlId_companyId: { controlId: control.id, companyId: company.id } },
-    })
+    const existing = existingMap.get(control.id)
 
     if (existing) {
       if (!existing.suggestedFrequency) {
-        await prisma.reviewSchedule.update({
-          where: { id: existing.id },
-          data: { suggestedFrequency: suggested },
-        })
-        updated++
+        toUpdate.push({ id: existing.id, suggestedFrequency: suggested })
       }
     } else {
-      await prisma.reviewSchedule.create({
-        data: {
-          controlId: control.id,
-          companyId: company.id,
-          frequency: suggested,
-          suggestedFrequency: suggested,
-        },
+      toCreate.push({
+        controlId: control.id,
+        companyId: company.id,
+        frequency: suggested,
+        suggestedFrequency: suggested,
       })
-      created++
     }
   }
+
+  const [createdResult] = await Promise.all([
+    toCreate.length > 0
+      ? prisma.reviewSchedule.createMany({ data: toCreate })
+      : Promise.resolve({ count: 0 }),
+    ...toUpdate.map(u =>
+      prisma.reviewSchedule.update({
+        where: { id: u.id },
+        data: { suggestedFrequency: u.suggestedFrequency },
+      })
+    ),
+  ])
+
+  const created = createdResult.count
+  const updated = toUpdate.length
 
   const total = await prisma.reviewSchedule.count({
     where: { companyId: company.id },

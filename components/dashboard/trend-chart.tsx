@@ -36,12 +36,10 @@ export function TrendChart({ data = [] }: Props) {
           <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
           <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} domain={[0, 100]} />
           <Tooltip
-            contentStyle={{
-              backgroundColor: "hsl(var(--popover))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: "8px"
-            }}
-            labelStyle={{ color: "hsl(var(--popover-foreground))" }}
+            contentStyle={
+              { backgroundColor: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: "8px" } as React.CSSProperties
+            }
+            labelStyle={{ color: "hsl(var(--popover-foreground))" } as React.CSSProperties}
           />
           <Bar dataKey="score" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
         </BarChart>

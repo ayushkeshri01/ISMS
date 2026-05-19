@@ -27,7 +27,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
-  const [debugOtp, setDebugOtp] = useState("")
+
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
@@ -53,6 +53,7 @@ export default function LoginPage() {
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         <p className="text-muted-foreground">Checking session…</p>
       </div>
     )
@@ -87,7 +88,6 @@ export default function LoginPage() {
         return
       }
 
-      setDebugOtp(data.otp || "")
       setStep("otp")
       setTimeout(() => otpRefs[0].current?.focus(), 100)
     } catch {
@@ -164,7 +164,6 @@ export default function LoginPage() {
         return
       }
 
-      setDebugOtp(data.otp || "")
       setTimeout(() => otpRefs[0].current?.focus(), 100)
     } catch {
       setError("Connection error. Please try again.")
@@ -285,12 +284,6 @@ export default function LoginPage() {
               </form>
             ) : (
               <div className="space-y-5">
-                {debugOtp && (
-                  <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 px-3 py-2 text-center text-sm">
-                    <span className="text-muted-foreground">Dev OTP: </span>
-                    <span className="font-mono font-bold text-foreground tracking-widest">{debugOtp}</span>
-                  </div>
-                )}
                 <div className="space-y-3">
                   <Label>Enter 6-Digit OTP</Label>
                   <div className="flex gap-2 justify-center">
@@ -306,6 +299,7 @@ export default function LoginPage() {
                         onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                         disabled={loading}
                         autoFocus={idx === 0}
+                        aria-label={`Digit ${idx + 1} of OTP`}
                         className="w-11 h-12 rounded-lg border border-input bg-background text-center text-xl font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       />
                     ))}

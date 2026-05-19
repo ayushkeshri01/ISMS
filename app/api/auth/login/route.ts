@@ -59,7 +59,6 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: "OTP sent to your email",
-      otp: process.env.NODE_ENV === "development" ? otp : undefined,
     })
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

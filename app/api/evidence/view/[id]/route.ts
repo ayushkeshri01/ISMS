@@ -43,7 +43,8 @@ export async function GET(
   const INLINE_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp']
   const disposition = INLINE_TYPES.includes(fileType) ? 'inline' : 'attachment'
 
-  return new NextResponse(evidence.fileData.buffer.slice(evidence.fileData.byteOffset, evidence.fileData.byteOffset + evidence.fileData.byteLength) as ArrayBuffer, {
+  const buffer = Buffer.isBuffer(evidence.fileData) ? evidence.fileData : Buffer.from(evidence.fileData)
+  return new NextResponse(buffer, {
     headers: {
       'Content-Type': fileType,
       'Content-Disposition': `${disposition}; filename="${evidence.filename.substring(0, 100)}"`,

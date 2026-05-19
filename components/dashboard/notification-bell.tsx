@@ -13,10 +13,7 @@ interface Notification {
   createdAt: Date;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface Props {}
-
-export function NotificationBell({ }: Props) {
+export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)

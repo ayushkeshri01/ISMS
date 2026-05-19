@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { Upload } from "lucide-react"
 import { toast } from "sonner"
 import { EvidenceUpload } from "./evidence-upload"
-import { CONTROL_CATEGORIES } from "@/lib/constants"
+import { CONTROL_CATEGORIES, STATUS_COLORS } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import {
   Select,
@@ -124,26 +124,31 @@ export function ControlAccordion({ controls, companyKey, userRole }: Props) {
     }
   }, [companyKey, localControls, pendingControls])
   
-  const sortedControls = useMemo(() => {
-    const sortControls = (a: Control, b: Control) => {
-      const parseControlId = (id: string) => {
-        if (id.startsWith('A.')) {
-          const match = id.match(/A\.(\d+)\.(\d+)/)
-          if (match) return [0, parseInt(match[1]), parseInt(match[2])]
-        } else if (/^\d+\.\d+$/.test(id)) {
-          const match = id.match(/(\d+)\.(\d+)/)
-          if (match) return [1, parseInt(match[1]), parseInt(match[2])]
-        }
-        return [2, 0, 0]
+  const sortControls = useCallback((a: Control, b: Control) => {
+    const ANNEX_PREFIX = 0
+    const CLAUSE_PREFIX = 1
+    const OTHER_PREFIX = 2
+
+    const parseControlId = (id: string) => {
+      if (id.startsWith('A.')) {
+        const match = id.match(/A\.(\d+)\.(\d+)/)
+        if (match) return [ANNEX_PREFIX, parseInt(match[1]), parseInt(match[2])]
+      } else if (/^\d+\.\d+$/.test(id)) {
+        const match = id.match(/(\d+)\.(\d+)/)
+        if (match) return [CLAUSE_PREFIX, parseInt(match[1]), parseInt(match[2])]
       }
-      const [prefixA, mainA, subA] = parseControlId(a.controlId)
-      const [prefixB, mainB, subB] = parseControlId(b.controlId)
-      if (prefixA !== prefixB) return prefixA - prefixB
-      if (mainA !== mainB) return mainA - mainB
-      return subA - subB
+      return [OTHER_PREFIX, 0, 0]
     }
+    const [prefixA, mainA, subA] = parseControlId(a.controlId)
+    const [prefixB, mainB, subB] = parseControlId(b.controlId)
+    if (prefixA !== prefixB) return prefixA - prefixB
+    if (mainA !== mainB) return mainA - mainB
+    return subA - subB
+  }, [])
+
+  const sortedControls = useMemo(() => {
     return (localControls || []).sort(sortControls)
-  }, [localControls])
+  }, [localControls, sortControls])
 
   const groupedControls = useMemo(() => {
     const getCategoryKey = (control: Control): string => {
@@ -214,17 +219,12 @@ export function ControlAccordion({ controls, companyKey, userRole }: Props) {
                           />
                         )}
                         
-                        <Badge variant={
-                          control.status === 'COMPLETED' ? 'default' :
-                          control.status === 'IN_PROGRESS' ? 'secondary' :
-                          control.status === 'NA' ? 'outline' :
-                          'destructive'
-                        }>
+                        <Badge variant={STATUS_COLORS[control.status] || 'destructive'}>
                           {control.status.replace('_', ' ')}
                         </Badge>
                         
                         <Dialog>
-                          <DialogTrigger render={<Button variant="ghost" size="icon">
+                          <DialogTrigger render={<Button variant="ghost" size="icon" aria-label={`Upload evidence for ${control.controlId}`}>
                             <Upload className="h-4 w-4" />
                           </Button>} />
                           <DialogContent>

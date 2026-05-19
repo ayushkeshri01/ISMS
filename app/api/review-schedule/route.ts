@@ -54,7 +54,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Invalid company key" }, { status: 400 })
   }
 
-  if (session.user.companyKey && session.user.companyKey !== companyKey && session.user.role !== "CIO") {
+  // Only CIO or the company's own IT_MANAGER/STQM_MANAGER can update schedules
+  const hasUpdateAccess = session.user.role === "CIO" ||
+    (session.user.companyKey === companyKey && ["IT_MANAGER", "STQM_MANAGER"].includes(session.user.role))
+  if (!hasUpdateAccess) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 

@@ -15,7 +15,7 @@ async function getSmtpConfig() {
     secure: (map.smtp_secure || process.env.SMTP_SECURE || "false") === "true",
     user: map.smtp_user || process.env.SMTP_USER || "",
     pass: map.smtp_pass || process.env.SMTP_PASS || "",
-    from: map.smtp_from || process.env.SMTP_FROM || "noreply@vikasgroup.com",
+    from: map.smtp_from || process.env.SMTP_FROM || "noreply@vikasgroup.in",
   }
 }
 

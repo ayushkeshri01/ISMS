@@ -510,9 +510,10 @@ export function ReviewSchedule({ companyKey }: Props) {
                                 size="sm"
                                 className="h-7 text-xs"
                                 onClick={() => handleMarkReviewed(s.id)}
+                                title="Record a new review entry for this control"
                               >
                                 <CheckCircle2 className="mr-1 h-3 w-3" />
-                                Re-review
+                                Review Again
                               </Button>
                               <Button
                                 variant="secondary"

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { formatDate } from "@/lib/utils"
 
 interface Props {
@@ -26,28 +27,50 @@ interface Props {
 
 export function ActivityLogTable({ logs = [] }: Props) {
   const [filter, setFilter] = useState<"all" | "local" | "cloud">("all")
+  const [visibleCount, setVisibleCount] = useState(25)
+  const PAGE_SIZE = 25
   
   const filteredLogs = logs.filter(log => {
     if (filter === "all") return true
     if (filter === "local") return log.isLocal
     return !log.isLocal
   })
+  const visibleLogs = filteredLogs.slice(0, visibleCount)
+  const hasMore = filteredLogs.length > visibleCount
   
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Activity Log</CardTitle>
-          <div className="flex gap-2">
-            <Badge variant={filter === "all" ? "default" : "outline"} className="cursor-pointer" onClick={() => setFilter("all")}>
+          <div className="flex gap-2" role="radiogroup" aria-label="Filter by source">
+            <Button
+              variant={filter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilter("all")}
+              role="radio"
+              aria-checked={filter === "all"}
+            >
               All
-            </Badge>
-            <Badge variant={filter === "local" ? "default" : "outline"} className="cursor-pointer" onClick={() => setFilter("local")}>
+            </Button>
+            <Button
+              variant={filter === "local" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilter("local")}
+              role="radio"
+              aria-checked={filter === "local"}
+            >
               Local
-            </Badge>
-            <Badge variant={filter === "cloud" ? "default" : "outline"} className="cursor-pointer" onClick={() => setFilter("cloud")}>
+            </Button>
+            <Button
+              variant={filter === "cloud" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilter("cloud")}
+              role="radio"
+              aria-checked={filter === "cloud"}
+            >
               Cloud
-            </Badge>
+            </Button>
           </div>
         </div>
       </CardHeader>
@@ -63,7 +86,7 @@ export function ActivityLogTable({ logs = [] }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredLogs.map(log => (
+            {visibleLogs.map(log => (
               <TableRow key={log.id}>
                 <TableCell className="text-sm text-muted-foreground">
                   {formatDate(log.createdAt)}
@@ -104,6 +127,13 @@ export function ActivityLogTable({ logs = [] }: Props) {
             )}
           </TableBody>
         </Table>
+        {hasMore && (
+          <div className="flex justify-center pt-4">
+            <Button variant="outline" size="sm" onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}>
+              Load More ({filteredLogs.length - visibleCount} remaining)
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

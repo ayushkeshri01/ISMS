@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { COMPANIES, COMPANY_KEYS } from "@/lib/constants"
 import { TrendingUp, CheckCircle2, Clock, XCircle, BarChart3 } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
 import { MasterDashboardClient } from "@/components/dashboard/master-dashboard-client"
 
 async function getDashboardData() {
@@ -161,7 +162,7 @@ export default async function MasterDashboardPage() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {companies.map((company) => (
-          <a key={company.key} href={`/dashboard/${company.key}`}>
+          <Link key={company.key} href={`/dashboard/${company.key}`}>
             <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-3">
@@ -176,7 +177,7 @@ export default async function MasterDashboardPage() {
                 <div className="text-3xl font-bold mb-2">{company.score}%</div>
                 <Progress value={company.score} className="h-2 mb-3" />
                 
-                <div className="flex items-end gap-1 h-8">
+                <div className="flex items-end gap-1 h-12">
                   {company.history.map((h, i) => (
                     <div
                       key={i}
@@ -187,7 +188,7 @@ export default async function MasterDashboardPage() {
                 </div>
               </CardContent>
             </Card>
-          </a>
+          </Link>
         ))}
       </div>
       

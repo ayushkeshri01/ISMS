@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bell, Check } from "lucide-react"
@@ -20,6 +20,7 @@ export function NotificationBell({ }: Props) {
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
   
   const fetchNotifications = async () => {
     try {
@@ -69,6 +70,18 @@ export function NotificationBell({ }: Props) {
       return () => clearTimeout(timer)
     }
   }, [open, unreadCount])
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    const handleClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [open])
   
   const markAsRead = async (id: string) => {
     try {
@@ -87,7 +100,7 @@ export function NotificationBell({ }: Props) {
   }
   
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <Button variant="ghost" size="icon" onClick={() => setOpen(!open)}>
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (

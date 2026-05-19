@@ -37,7 +37,7 @@ async function getCompanyData(companyKey: string, userId: string, userRole: stri
   if (userCompanyKey !== null) {
     const MAKER_ROLES = ['IT_EXECUTIVE', 'HR_EXECUTIVE']
     const FULL_ACCESS_MANAGER_ROLES = ['CIO', 'IT_MANAGER', 'STQM_MANAGER']
-    const DEPARTMENT_MANAGER_ROLES = ['HR_MANAGER', 'ADMIN_FACILITIES', 'LEGAL']
+    const DEPARTMENT_MANAGER_ROLES = ['HR_MANAGER']
 
     if (MAKER_ROLES.includes(userRole)) {
       // Maker roles see all controls for their company
@@ -86,7 +86,12 @@ export default async function SubsidiaryDashboardPage({
   const session = await auth()
   
   if (!session) redirect("/login")
-  
+
+  // Authorization: users can only view their own company's dashboard unless they are CIO
+  if (session.user.companyKey && session.user.companyKey !== normalizedKey && session.user.role !== "CIO") {
+    redirect(`/dashboard/${session.user.companyKey}`)
+  }
+
   const validKeys = COMPANY_KEYS.map(k => k.toLowerCase())
   if (!validKeys.includes(normalizedKey)) {
     redirect("/dashboard/master")

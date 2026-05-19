@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export function CertificateForm({ certificates = [], companyKey }: Props) {
+  const router = useRouter()
   const [showForm, setShowForm] = useState(false)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -89,7 +91,7 @@ export function CertificateForm({ certificates = [], companyKey }: Props) {
       
       setShowForm(false)
       setFormData({ body: "", number: "", validFrom: "", validTo: "", scope: "", isActive: false, surveillanceAudit1: "", surveillanceAudit2: "", certificateFile: null })
-      window.location.reload()
+      router.refresh()
     } catch {
       alert("Failed to save certificate")
     } finally {
@@ -301,7 +303,11 @@ export function CertificateForm({ certificates = [], companyKey }: Props) {
               </Card>
             ))}
             {certificates.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">No certificates added yet</p>
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                <p className="font-medium mb-1">No certificates added yet</p>
+                <p className="text-sm">Click &ldquo;Add Certificate&rdquo; to upload ISO certificates for this subsidiary.</p>
+              </div>
             )}
           </div>
         </CardContent>

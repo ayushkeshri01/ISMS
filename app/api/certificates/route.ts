@@ -13,18 +13,25 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const companyKey = searchParams.get('companyKey')
 
+  // Resolve companyKey: default to user's own company if not provided
+  const resolvedCompanyKey = companyKey || session.user.companyKey
+
+  if (!resolvedCompanyKey && session.user.role !== 'CIO') {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
   // Validate companyKey if provided
-  if (companyKey && !COMPANY_KEYS.includes(companyKey as (typeof COMPANY_KEYS)[number])) {
+  if (resolvedCompanyKey && !COMPANY_KEYS.includes(resolvedCompanyKey as (typeof COMPANY_KEYS)[number])) {
     return NextResponse.json({ error: "Invalid company" }, { status: 400 })
   }
 
   // Users can only access their own company or CIO can access all
-  if (companyKey && session.user.companyKey !== companyKey && session.user.role !== 'CIO') {
+  if (resolvedCompanyKey && session.user.companyKey !== resolvedCompanyKey && session.user.role !== 'CIO') {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   const certificates = await prisma.certificate.findMany({
-    where: companyKey ? { company: { key: companyKey } } : {},
+    where: resolvedCompanyKey ? { company: { key: resolvedCompanyKey } } : {},
     orderBy: { createdAt: 'desc' }
   })
 

@@ -24,6 +24,7 @@ import {
   BarChart3,
   Calendar,
   Settings,
+  KeyRound,
 } from "lucide-react"
 import { COMPANIES, COMPANY_KEYS } from "@/lib/constants"
 
@@ -68,11 +69,13 @@ export function Sidebar({
     }
     return false
   })
-  const isMaster  = pathname.includes("/dashboard/master")
-  const isCIO     = userRole === "CIO"
-  const activeTab = searchParams.get("tab") ?? userTabs[0] ?? "overview"
-  // Show tab nav only when on a company dashboard page
-  const isCompanyPage = !!companyKey && pathname.includes(`/dashboard/${companyKey}`) && !isMaster
+  const isMaster    = pathname.includes("/dashboard/master")
+  const isCIO       = userRole === "CIO"
+  const activeTab   = searchParams.get("tab") ?? userTabs[0] ?? "overview"
+  // Derive companyKey from URL if on a company page, fallback to prop
+  const urlCompanyKey = pathname.match(/^\/dashboard\/([^/]+)/)?.[1]
+  const effectiveCompanyKey = (urlCompanyKey && !isMaster) ? urlCompanyKey : companyKey
+  const isCompanyPage = !!effectiveCompanyKey && !isMaster
 
   const toggleCollapsed = () => {
     const next = !collapsed
@@ -88,12 +91,12 @@ export function Sidebar({
     : "Vikas Group"
 
   // Determine what to show in the top header
-  const companyInfo = companyKey
-    ? COMPANIES[companyKey as keyof typeof COMPANIES]
+  const companyInfo = effectiveCompanyKey
+    ? COMPANIES[effectiveCompanyKey as keyof typeof COMPANIES]
     : null
 
   const headerLogo = companyInfo?.logo ?? "/logos/vikasgrouplogo.png"
-  const headerName = companyName ?? "Vikas Group"
+  const headerName = companyName ?? companyInfo?.name ?? "Vikas Group"
 
   return (
     <aside
@@ -196,7 +199,7 @@ export function Sidebar({
               return (
                 <NavItem
                   key={tab}
-                  href={`/dashboard/${companyKey}?tab=${tab}`}
+                  href={`/dashboard/${effectiveCompanyKey}?tab=${tab}`}
                   label={meta.label}
                   icon={meta.icon}
                   active={activeTab === tab}
@@ -209,7 +212,7 @@ export function Sidebar({
         )}
 
         {/* CIO on company page: also show tab nav */}
-        {isCIO && !isMaster && companyKey && userTabs.length > 0 && (
+        {isCIO && !isMaster && effectiveCompanyKey && userTabs.length > 0 && (
           <>
             <div className={cn("px-3 py-1", collapsed && "md:px-1")}>
               <Separator />
@@ -226,7 +229,7 @@ export function Sidebar({
               return (
                 <NavItem
                   key={tab}
-                  href={`/dashboard/${companyKey}?tab=${tab}`}
+                  href={`/dashboard/${effectiveCompanyKey}?tab=${tab}`}
                   label={meta.label}
                   icon={meta.icon}
                   active={activeTab === tab}
@@ -239,8 +242,8 @@ export function Sidebar({
         )}
       </nav>
 
-      {/* Settings — admin only */}
-      {userAccess === "write" && (
+      {/* Settings — admin only (not CIO) */}
+      {userAccess === "write" && userRole !== "CIO" && (
         <div className="px-2">
           <div className={cn("px-1 py-1", collapsed && "md:px-1")}>
             <Separator />
@@ -255,6 +258,21 @@ export function Sidebar({
           />
         </div>
       )}
+
+      {/* Change Password — all users */}
+      <div className="px-2">
+        <div className={cn("px-1 py-1", collapsed && "md:px-1")}>
+          <Separator />
+        </div>
+        <NavItem
+          href="/dashboard/change-password"
+          label="Change Password"
+          icon={KeyRound}
+          active={pathname === "/dashboard/change-password"}
+          collapsed={collapsed}
+          onClose={onClose}
+        />
+      </div>
 
       {/* ── Footer: user card + logout ──────────────────────────────── */}
       <div className="border-t">

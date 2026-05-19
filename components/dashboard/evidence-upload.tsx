@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 interface Control {
@@ -33,7 +35,6 @@ interface Props {
 export function EvidenceUpload({ controls, companyKey, preselectedControl }: Props) {
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [controlSearch, setControlSearch] = useState("")
   const [formData, setFormData] = useState({
     controlId: preselectedControl || "",
     title: "",
@@ -44,16 +45,11 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const filteredControls = controls.filter(c =>
-    c.controlId.toLowerCase().includes(controlSearch.toLowerCase()) ||
-    c.label.toLowerCase().includes(controlSearch.toLowerCase())
-  )
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (selectedFile) {
       if (selectedFile.size > 5 * 1024 * 1024) {
-        alert("File size must be less than 5MB")
+        toast.error("File size must be less than 5MB")
         return
       }
       setFile(selectedFile)
@@ -70,7 +66,7 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
 
   const handleSubmit = async () => {
     if (!file || !formData.controlId || !formData.evidenceType) {
-      alert("Please fill all required fields")
+      toast.error("Please fill all required fields")
       return
     }
     
@@ -109,16 +105,15 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
       })
       
       if (response.ok) {
-        alert("Evidence uploaded successfully!")
+        toast.success("Evidence uploaded successfully!")
         setFile(null)
         setFormData({ controlId: "", title: "", referenceNo: "", evidenceType: "", version: "", dateOfDocument: "" })
-        setControlSearch("")
       } else {
         const error = await response.json().catch(() => ({ error: "Unknown error" }))
-        alert("Upload failed: " + (error.error || "Server error"))
+        toast.error("Upload failed: " + (error.error || "Server error"))
       }
     } catch (err) {
-      alert("Upload error: " + (err instanceof Error ? err.message : "Unknown"))
+      toast.error("Upload error: " + (err instanceof Error ? err.message : "Unknown"))
     } finally {
       setUploading(false)
     }
@@ -135,32 +130,38 @@ export function EvidenceUpload({ controls, companyKey, preselectedControl }: Pro
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Control *</Label>
-              <div className="space-y-2">
-                <div className="relative">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Type to search controls..."
-                    value={controlSearch}
-                    onChange={(e) => setControlSearch(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-                <Select
-                  value={formData.controlId}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, controlId: value }))}
+              <Popover>
+                <PopoverTrigger
+                  render={<Button variant="outline" role="combobox" className="w-full justify-between" />}
                 >
-                  <SelectTrigger className="w-full mt-2">
-                    <SelectValue placeholder="-- Select control --" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredControls.map(c => (
-                      <SelectItem key={c.controlId} value={c.controlId}>
-                        {c.controlId} - {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  {formData.controlId
+                    ? controls.find(c => c.controlId === formData.controlId)
+                      ? `${controls.find(c => c.controlId === formData.controlId)!.controlId} - ${controls.find(c => c.controlId === formData.controlId)!.label}`
+                      : formData.controlId
+                    : "-- Select control --"}
+                  <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search controls..." />
+                    <CommandList>
+                      <CommandEmpty>No control found.</CommandEmpty>
+                      <CommandGroup>
+                        {controls.map(c => (
+                          <CommandItem
+                            key={c.controlId}
+                            value={`${c.controlId} ${c.label}`}
+                            onSelect={() => setFormData(prev => ({ ...prev, controlId: c.controlId }))}
+                          >
+                            <span className="font-mono text-xs">{c.controlId}</span>
+                            <span className="ml-2">{c.label}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           
             <div className="space-y-2">

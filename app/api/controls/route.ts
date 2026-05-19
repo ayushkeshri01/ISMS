@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ controls })
 }
 
-const MANAGER_ROLES = ['CIO', 'IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'ADMIN_FACILITIES', 'LEGAL', 'IT_EXECUTIVE', 'HR_EXECUTIVE', 'ADMIN', 'SUPER_ADMIN']
+const MANAGER_ROLES = ['CIO', 'IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'IT_EXECUTIVE', 'HR_EXECUTIVE', 'ADMIN', 'SUPER_ADMIN']
 
 export async function PATCH(request: NextRequest) {
   const session = await auth()

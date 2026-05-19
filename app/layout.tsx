@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth"
 import { ThemeProvider } from "@/components/theme-provider"
 import { LinkHandler } from "@/components/link-handler"
 import { CommandPalette } from "@/components/command-palette"
+import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -28,6 +29,7 @@ export default async function RootLayout({
           <SessionProvider session={session}>
             <LinkHandler />
             <CommandPalette />
+            <Toaster />
             {children}
           </SessionProvider>
         </ThemeProvider>

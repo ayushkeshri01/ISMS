@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import { COMPANIES, CONTROL_CATEGORIES } from "@/lib/constants"
 import { CheckCircle, Clock, XCircle, BarChart3, Printer } from "lucide-react"
 import { ControlAccordion } from "./control-accordion"
@@ -90,6 +91,13 @@ export function SubsidiaryDashboardClient({
   const toggleCioReview = (checked: boolean) => {
     setCioReviewEnabled(checked)
     localStorage.setItem(`cio-review-${companyKeyLower}`, String(checked))
+    // If hiding review tab and currently on it, navigate to first available tab
+    if (!checked && activeTab === 'review') {
+      const firstTab = userTabs.filter(t => t !== 'review')[0] || 'overview'
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('tab', firstTab)
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }
   }
 
   const effectiveTabs = userRole === 'CIO' && !cioReviewEnabled
@@ -112,7 +120,19 @@ export function SubsidiaryDashboardClient({
 
   // Conditional return AFTER all hooks
   if (!company) {
-    return <div className="p-8 text-center">Loading company data...</div>
+    return (
+      <div className="space-y-4 p-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="rounded-lg border p-6">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-4 w-20 mt-2" />
+            </div>
+          ))}
+        </div>
+        <Skeleton className="h-48 w-full rounded-lg" />
+      </div>
+    )
   }
   
   const companyInfo = COMPANIES[companyKeyLower as keyof typeof COMPANIES]
@@ -255,10 +275,47 @@ export function SubsidiaryDashboardClient({
         <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Compliance Trend</CardTitle>
+                <CardTitle>Executive Summary</CardTitle>
               </CardHeader>
-              <CardContent>
-                <TrendChart data={company?.complianceHistory} />
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-2xl font-bold">{stats.score}%</p>
+                    <p className="text-xs text-muted-foreground">Compliance Score</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-2xl font-bold">{stats.completed}/{stats.total}</p>
+                    <p className="text-xs text-muted-foreground">Controls Met</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-2xl font-bold">{stats.inProgress}</p>
+                    <p className="text-xs text-muted-foreground">In Progress</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-2xl font-bold">{stats.notStarted}</p>
+                    <p className="text-xs text-muted-foreground">Not Started</p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Category Breakdown</h3>
+                  {Object.entries(controlsByCategory).map(([key, items]) => {
+                    const categoryItems = items as Control[]
+                    const completed = categoryItems.filter(c => c.status === 'COMPLETED').length
+                    const score = categoryItems.length > 0 ? Math.round((completed / categoryItems.length) * 100) : 0
+                    const lookupKey = key.replace('annex_a_', 'ANNEX_A_').toUpperCase() as keyof typeof CONTROL_CATEGORIES
+                    const categoryInfo = CONTROL_CATEGORIES[lookupKey]
+                    const categoryName = categoryInfo?.name || key
+                    return (
+                      <div key={key} className="flex items-center gap-3 py-1.5">
+                        <span className="text-xs text-muted-foreground w-32 truncate">{categoryName}</span>
+                        <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full bg-primary rounded-full" style={{ width: `${score}%` }} />
+                        </div>
+                        <span className="text-xs font-medium w-12 text-right">{score}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
               </CardContent>
             </Card>
           </div>

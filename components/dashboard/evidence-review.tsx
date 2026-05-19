@@ -1,13 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { FileText, Check, X, Eye, ExternalLink } from "lucide-react"
+import { FileText, Check, X, Eye, ExternalLink, Inbox } from "lucide-react"
 
 interface Evidence {
   id: string
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export function EvidenceReview({ evidence = [] }: Props) {
+  const router = useRouter()
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null)
   const [reviewNote, setReviewNote] = useState("")
   
@@ -52,7 +54,7 @@ export function EvidenceReview({ evidence = [] }: Props) {
     
     setSelectedEvidence(null)
     setReviewNote("")
-    window.location.reload()
+    router.refresh()
   }
   
   const EvidenceCard = ({ item }: { item: Evidence }) => (
@@ -104,8 +106,9 @@ export function EvidenceReview({ evidence = [] }: Props) {
   return (
     <div className="space-y-4">
       {evidence.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          <p className="mb-2">No evidence uploaded yet</p>
+        <div className="text-center py-12 text-muted-foreground">
+          <Inbox className="h-12 w-12 mx-auto mb-3 opacity-40" />
+          <p className="font-medium mb-1">No evidence uploaded yet</p>
           <p className="text-sm">Upload evidence in the &quot;Docs&quot; tab first.</p>
         </div>
       )}
@@ -119,9 +122,10 @@ export function EvidenceReview({ evidence = [] }: Props) {
         
         <TabsContent value="pending" className="space-y-3">
           {pending.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              {evidence.length === 0 ? "No evidence uploaded yet. Upload evidence first." : "No pending evidence to review"}
-            </p>
+            <div className="text-center py-12 text-muted-foreground">
+              <Inbox className="h-10 w-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">{evidence.length === 0 ? "No evidence uploaded yet. Upload evidence first." : "No pending evidence to review"}</p>
+            </div>
           ) : (
             pending.map(e => <EvidenceCard key={e.id} item={e} />)
           )}
@@ -129,7 +133,10 @@ export function EvidenceReview({ evidence = [] }: Props) {
         
         <TabsContent value="approved" className="space-y-3">
           {approved.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No approved evidence</p>
+            <div className="text-center py-12 text-muted-foreground">
+              <FileText className="h-10 w-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No approved evidence</p>
+            </div>
           ) : (
             approved.map(e => <EvidenceCard key={e.id} item={e} />)
           )}
@@ -137,7 +144,10 @@ export function EvidenceReview({ evidence = [] }: Props) {
         
         <TabsContent value="rejected" className="space-y-3">
           {rejected.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No rejected evidence</p>
+            <div className="text-center py-12 text-muted-foreground">
+              <FileText className="h-10 w-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No rejected evidence</p>
+            </div>
           ) : (
             rejected.map(e => <EvidenceCard key={e.id} item={e} />)
           )}

@@ -6,8 +6,8 @@ const SETTING_KEYS = ["smtp_host", "smtp_port", "smtp_secure", "smtp_user", "smt
 
 export async function GET() {
   const session = await auth()
-  if (!session?.user || session.user.access !== "write") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!session?.user || session.user.role !== "CIO") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   const settings = await prisma.setting.findMany({
@@ -24,8 +24,8 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   const session = await auth()
-  if (!session?.user || session.user.access !== "write") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!session?.user || session.user.role !== "CIO") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   try {

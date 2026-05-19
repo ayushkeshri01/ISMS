@@ -13,14 +13,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { email, password, pin, name, role, department, companyKey } = body
+    const { email, password, name, role, department, companyKey } = body
 
     if (!body || typeof body !== 'object') {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 })
     }
 
-    if (!email || !password || !pin || !name || !role || !department) {
-      return NextResponse.json({ error: "Missing required fields (email, password, pin, name, role, department)" }, { status: 400 })
+    if (!email || !password || !name || !role || !department) {
+      return NextResponse.json({ error: "Missing required fields (email, password, name, role, department)" }, { status: 400 })
     }
 
     const emailNormalized = email.toLowerCase().trim()
@@ -33,26 +33,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 })
     }
 
-    if (!/^\d{4}$/.test(pin)) {
-      return NextResponse.json({ error: "PIN must be 4 digits" }, { status: 400 })
-    }
-
     if (name.length > 100 || department.length > 100) {
       return NextResponse.json({ error: "Field too long" }, { status: 400 })
     }
 
-    const VALID_ROLES = ['IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'ADMIN_FACILITIES', 'LEGAL', 'IT_EXECUTIVE', 'HR_EXECUTIVE']
+    const VALID_ROLES = ['IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'IT_EXECUTIVE', 'HR_EXECUTIVE']
     if (!VALID_ROLES.includes(role)) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 })
     }
 
     if (companyKey && !COMPANY_KEYS.includes(companyKey as (typeof COMPANY_KEYS)[number])) {
       return NextResponse.json({ error: "Invalid company" }, { status: 400 })
-    }
-
-    const existingPin = await prisma.user.findUnique({ where: { pin } })
-    if (existingPin) {
-      return NextResponse.json({ error: "PIN already in use" }, { status: 400 })
     }
 
     const existingEmail = await prisma.user.findUnique({ where: { email: emailNormalized } })
@@ -66,7 +57,6 @@ export async function POST(request: NextRequest) {
       data: {
         email: emailNormalized,
         password: hashedPassword,
-        pin,
         name: name.substring(0, 100),
         role,
         department: department.substring(0, 100),
@@ -99,8 +89,16 @@ export async function DELETE(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({ where: { id: userId } })
-    if (user && !user.isCustom) {
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+    if (!user.isCustom) {
       return NextResponse.json({ error: "Cannot delete built-in users" }, { status: 400 })
+    }
+
+    // Tenant validation: only CIO can delete users from other companies
+    if (session.user.role !== "CIO" && session.user.companyKey !== user.companyKey) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     await prisma.user.delete({ where: { id: userId } })
@@ -108,6 +106,78 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Delete user error:', error)
+    return NextResponse.json({ error: "Server error" }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  const session = await auth()
+  
+  if (!session?.user || session.user.access !== 'write') {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  try {
+    const body = await request.json()
+    const { id, email, name, role, department } = body
+
+    if (!id) {
+      return NextResponse.json({ error: "User ID is required" }, { status: 400 })
+    }
+
+    const user = await prisma.user.findUnique({ where: { id } })
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    // Tenant validation: only CIO can edit users from other companies
+    if (session.user.role !== "CIO" && session.user.companyKey !== user.companyKey) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const updateData: Record<string, string> = {}
+
+    if (email !== undefined) {
+      const emailNormalized = email.toLowerCase().trim()
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalized)) {
+        return NextResponse.json({ error: "Invalid email format" }, { status: 400 })
+      }
+      const existing = await prisma.user.findFirst({
+        where: { email: emailNormalized, id: { not: id } },
+      })
+      if (existing) {
+        return NextResponse.json({ error: "Email already in use" }, { status: 400 })
+      }
+      updateData.email = emailNormalized
+    }
+
+    if (name !== undefined) {
+      if (name.length > 100) return NextResponse.json({ error: "Name too long" }, { status: 400 })
+      updateData.name = name
+    }
+
+    if (role !== undefined) {
+      const VALID_ROLES = ['IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'IT_EXECUTIVE', 'HR_EXECUTIVE']
+      if (!VALID_ROLES.includes(role)) {
+        return NextResponse.json({ error: "Invalid role" }, { status: 400 })
+      }
+      updateData.role = role
+    }
+
+    if (department !== undefined) {
+      if (department.length > 100) return NextResponse.json({ error: "Department too long" }, { status: 400 })
+      updateData.department = department
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: "No fields to update" }, { status: 400 })
+    }
+
+    await prisma.user.update({ where: { id }, data: updateData })
+
+    return NextResponse.json({ success: true, message: "User updated" })
+  } catch (error) {
+    console.error('Update user error:', error)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

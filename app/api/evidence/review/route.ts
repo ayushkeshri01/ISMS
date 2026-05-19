@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   }
   
   // Only specific roles can review
-  const VALID_REVIEWERS = ['CIO', 'IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'ADMIN_FACILITIES', 'LEGAL']
+  const VALID_REVIEWERS = ['CIO', 'IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER']
   if (!VALID_REVIEWERS.includes(session.user.role as typeof VALID_REVIEWERS[number])) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }

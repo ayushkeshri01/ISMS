@@ -154,35 +154,37 @@ async function main() {
 
   const users = [
     // Group-level (no companyKey)
-    { email: "cio@vikasgroup.com",          pin: "2701", name: "CIO / Group IT Head",  role: "CIO",              department: "IT"      },
-    { email: "hrmanager@vikasgroup.com",    pin: "3801", name: "HR Manager",            role: "HR_MANAGER",       department: "HR"      },
-    { email: "admin@vikasgroup.com",        pin: "4901", name: "Admin / Facilities",    role: "ADMIN_FACILITIES", department: "ADMIN"   },
-    { email: "legal@vikasgroup.com",        pin: "5012", name: "Legal / Compliance",    role: "LEGAL",            department: "LEGAL"   },
-    { email: "mdceo@vikasgroup.com",        pin: "9001", name: "MD / CEO",              role: "MD_CEO",           department: "FINANCE" },
+    { email: "rajeev.singh@vikasgroup.in",          name: "CIO / Group IT Head",  role: "CIO",              department: "IT"      },
+    { email: "hrmanager@vikasgroup.in",        name: "HR Head",              role: "HR_MANAGER",  department: "HR",  companyKey: null },
+    { email: "hrmanager.ecocat@vikasgroup.in", name: "HR Manager - ECOCAT",      role: "HR_MANAGER",  department: "HR",  companyKey: "ecocat" },
+    { email: "hrmanager.pranav@vikasgroup.in", name: "HR Manager - PRANAV",      role: "HR_MANAGER",  department: "HR",  companyKey: "pranav" },
+    { email: "hrmanager.sanden@vikasgroup.in", name: "HR Manager - SANDEN",      role: "HR_MANAGER",  department: "HR",  companyKey: "sanden" },
+    { email: "hrmanager.sata@vikasgroup.in",   name: "HR Manager - SATA",        role: "HR_MANAGER",  department: "HR",  companyKey: "sata"   },
+    { email: "mdceo@vikasgroup.in",            name: "MD / CEO",                  role: "MD_CEO",      department: "FINANCE" },
 
     // IT Managers per subsidiary
-    { email: "itmanager.ecocat@vikasgroup.com", pin: "2702", name: "IT Manager - ECOCAT",  role: "IT_MANAGER",   department: "IT",  companyKey: "ecocat" },
-    { email: "itmanager.pranav@vikasgroup.com", pin: "2703", name: "IT Manager - PRANAV",  role: "IT_MANAGER",   department: "IT",  companyKey: "pranav" },
-    { email: "itmanager.sanden@vikasgroup.com", pin: "2704", name: "IT Manager - SANDEN",  role: "IT_MANAGER",   department: "IT",  companyKey: "sanden" },
-    { email: "itmanager.sata@vikasgroup.com",   pin: "2705", name: "IT Manager - SATA",    role: "IT_MANAGER",   department: "IT",  companyKey: "sata"   },
+    { email: "itmanager.ecocat@vikasgroup.in", name: "IT Manager - ECOCAT",  role: "IT_MANAGER",   department: "IT",  companyKey: "ecocat" },
+    { email: "itmanager.pranav@vikasgroup.in", name: "IT Manager - PRANAV",  role: "IT_MANAGER",   department: "IT",  companyKey: "pranav" },
+    { email: "itmanager.sanden@vikasgroup.in", name: "IT Manager - SANDEN",  role: "IT_MANAGER",   department: "IT",  companyKey: "sanden" },
+    { email: "itmanager.sata@vikasgroup.in",   name: "IT Manager - SATA",    role: "IT_MANAGER",   department: "IT",  companyKey: "sata"   },
 
     // STQM Managers per subsidiary
-    { email: "stqm.ecocat@vikasgroup.com", pin: "3702", name: "STQM Manager - ECOCAT", role: "STQM_MANAGER", department: "STQM", companyKey: "ecocat" },
-    { email: "stqm.pranav@vikasgroup.com", pin: "3703", name: "STQM Manager - PRANAV", role: "STQM_MANAGER", department: "STQM", companyKey: "pranav" },
-    { email: "stqm.sanden@vikasgroup.com", pin: "3704", name: "STQM Manager - SANDEN", role: "STQM_MANAGER", department: "STQM", companyKey: "sanden" },
-    { email: "stqm.sata@vikasgroup.com",   pin: "3705", name: "STQM Manager - SATA",   role: "STQM_MANAGER", department: "STQM", companyKey: "sata"   },
+    { email: "stqm.ecocat@vikasgroup.in", name: "STQM Manager - ECOCAT", role: "STQM_MANAGER", department: "STQM", companyKey: "ecocat" },
+    { email: "stqm.pranav@vikasgroup.in", name: "STQM Manager - PRANAV", role: "STQM_MANAGER", department: "STQM", companyKey: "pranav" },
+    { email: "stqm.sanden@vikasgroup.in", name: "STQM Manager - SANDEN", role: "STQM_MANAGER", department: "STQM", companyKey: "sanden" },
+    { email: "stqm.sata@vikasgroup.in",   name: "STQM Manager - SATA",   role: "STQM_MANAGER", department: "STQM", companyKey: "sata"   },
 
     // IT Executives per subsidiary
-    { email: "itexec.ecocat@vikasgroup.com",  pin: "1101", name: "IT Executive - ECOCAT",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "ecocat" },
-    { email: "itexec.pranav@vikasgroup.com",  pin: "1102", name: "IT Executive - PRANAV",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "pranav" },
-    { email: "itexec.sanden@vikasgroup.com",  pin: "1103", name: "IT Executive - SANDEN",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "sanden" },
-    { email: "itexec.sata@vikasgroup.com",    pin: "1104", name: "IT Executive - SATA",    role: "IT_EXECUTIVE",  department: "IT", companyKey: "sata"   },
+    { email: "itexec.ecocat@vikasgroup.in",  name: "IT Executive - ECOCAT",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "ecocat" },
+    { email: "itexec.pranav@vikasgroup.in",  name: "IT Executive - PRANAV",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "pranav" },
+    { email: "itexec.sanden@vikasgroup.in",  name: "IT Executive - SANDEN",  role: "IT_EXECUTIVE",  department: "IT", companyKey: "sanden" },
+    { email: "itexec.sata@vikasgroup.in",    name: "IT Executive - SATA",    role: "IT_EXECUTIVE",  department: "IT", companyKey: "sata"   },
 
     // HR Executives per subsidiary
-    { email: "hrexec.ecocat@vikasgroup.com",  pin: "1201", name: "HR Executive - ECOCAT",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "ecocat" },
-    { email: "hrexec.pranav@vikasgroup.com",  pin: "1202", name: "HR Executive - PRANAV",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "pranav" },
-    { email: "hrexec.sanden@vikasgroup.com",  pin: "1203", name: "HR Executive - SANDEN",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "sanden" },
-    { email: "hrexec.sata@vikasgroup.com",    pin: "1204", name: "HR Executive - SATA",    role: "HR_EXECUTIVE",  department: "HR", companyKey: "sata"   },
+    { email: "hrexec.ecocat@vikasgroup.in",  name: "HR Executive - ECOCAT",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "ecocat" },
+    { email: "hrexec.pranav@vikasgroup.in",  name: "HR Executive - PRANAV",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "pranav" },
+    { email: "hrexec.sanden@vikasgroup.in",  name: "HR Executive - SANDEN",  role: "HR_EXECUTIVE",  department: "HR", companyKey: "sanden" },
+    { email: "hrexec.sata@vikasgroup.in",    name: "HR Executive - SATA",    role: "HR_EXECUTIVE",  department: "HR", companyKey: "sata"   },
   ]
 
   for (const user of users) {

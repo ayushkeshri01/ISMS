@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { signIn, useSession } from "next-auth/react"
+import { useState, useRef } from "react"
+import Link from "next/link"
 import {
   Card,
   CardContent,
@@ -14,23 +13,19 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, Loader2, Mail, Lock, ShieldCheck, ArrowLeft } from "lucide-react"
-import Link from "next/link"
+import { AlertCircle, Loader2, Mail, Lock, ArrowLeft, ShieldCheck, CheckCircle2, ArrowRight } from "lucide-react"
 import Image from "next/image"
 
-export default function LoginPage() {
-  const router = useRouter()
-  const { data: session, status } = useSession()
-
-  const [step, setStep] = useState<"credentials" | "otp">("credentials")
+export default function ForgotPasswordPage() {
+  const [step, setStep] = useState<"email" | "otp" | "reset">("email")
   const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
   const [debugOtp, setDebugOtp] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
-  const [resending, setResending] = useState(false)
 
   const otpRefs = [
     useRef<HTMLInputElement>(null),
@@ -41,32 +36,13 @@ export default function LoginPage() {
     useRef<HTMLInputElement>(null),
   ]
 
-  useEffect(() => {
-    if (status === "authenticated" && session?.user) {
-      const dest = session.user.companyKey
-        ? `/dashboard/${session.user.companyKey}`
-        : "/dashboard/master"
-      router.replace(dest)
-    }
-  }, [status, session, router])
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Checking session…</p>
-      </div>
-    )
-  }
-
-  if (session?.user) return null
-
-  const otpFilled = otp.every((d) => d !== "")
   const maskedEmail = email.replace(/^(.)(.*)(.@)/, (_, a, b, c) => a + "*".repeat(b.length) + c)
+  const otpFilled = otp.every((d) => d !== "")
 
-  const handleCredentialsSubmit = async (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email || !password) {
-      setError("Please enter your email and password.")
+    if (!email) {
+      setError("Please enter your email.")
       return
     }
 
@@ -74,16 +50,16 @@ export default function LoginPage() {
     setError("")
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email }),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || "Invalid email or password.")
+        setError(data.error || "Failed to send OTP.")
         return
       }
 
@@ -109,9 +85,6 @@ export default function LoginPage() {
       otpRefs[index + 1].current?.focus()
     }
 
-    if (next.every((d) => d !== "") && value && index === 5) {
-      handleOtpSubmit(next.join(""))
-    }
   }
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
@@ -120,24 +93,43 @@ export default function LoginPage() {
     }
   }
 
-  const handleOtpSubmit = async (otpValue: string) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!newPassword || !confirmPassword) {
+      setError("Please enter and confirm your new password.")
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters.")
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.")
+      return
+    }
+
     setLoading(true)
     setError("")
 
     try {
-      const result = await signIn("credentials", {
-        email: email.toLowerCase().trim(),
-        otp: otpValue,
-        redirect: false,
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp: otp.join(""), newPassword }),
       })
 
-      if (result?.error) {
-        setError("Invalid or expired OTP. Please try again.")
-        setOtp(["", "", "", "", "", ""])
-        setTimeout(() => otpRefs[0].current?.focus(), 50)
-      } else {
-        window.location.href = "/dashboard/master"
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || "Failed to reset password.")
+        return
       }
+
+      setSuccess("Password reset successfully! You can now sign in with your new password.")
+      setStep("email")
     } catch {
       setError("Connection error. Please try again.")
     } finally {
@@ -145,36 +137,14 @@ export default function LoginPage() {
     }
   }
 
-  const handleResend = async () => {
-    setResending(true)
+  const handleVerifyOtp = () => {
+    if (!otpFilled) return
     setError("")
-    setOtp(["", "", "", "", "", ""])
-
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || "Failed to resend OTP.")
-        return
-      }
-
-      setDebugOtp(data.otp || "")
-      setTimeout(() => otpRefs[0].current?.focus(), 100)
-    } catch {
-      setError("Connection error. Please try again.")
-    } finally {
-      setResending(false)
-    }
+    setStep("reset")
   }
 
-  const handleBack = () => {
-    setStep("credentials")
+  const handleBackToEmail = () => {
+    setStep("email")
     setError("")
     setOtp(["", "", "", "", "", ""])
   }
@@ -200,9 +170,9 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader className="pb-4">
-            {step === "otp" && (
+            {step !== "email" && (
               <button
-                onClick={handleBack}
+                onClick={handleBackToEmail}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"
               >
                 <ArrowLeft className="h-3 w-3" />
@@ -211,12 +181,14 @@ export default function LoginPage() {
             )}
             <CardTitle className="flex items-center gap-2 text-lg">
               <ShieldCheck className="h-5 w-5 text-primary" />
-              {step === "credentials" ? "Sign In" : "Verify OTP"}
+              {step === "email" ? "Forgot Password" : step === "otp" ? "Verify OTP" : "Reset Password"}
             </CardTitle>
             <CardDescription>
-              {step === "credentials"
-                ? "Enter your credentials to receive a one-time password."
-                : `Enter the 6-digit code sent to ${maskedEmail}`}
+              {step === "email"
+                ? "Enter your email to receive a password reset OTP."
+                : step === "otp"
+                  ? `Enter the 6-digit code sent to ${maskedEmail}`
+                  : "Choose a new password for your account."}
             </CardDescription>
           </CardHeader>
 
@@ -227,9 +199,15 @@ export default function LoginPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+            {success && (
+              <Alert variant="default" className="border-green-500/50 text-green-600">
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertDescription>{success}</AlertDescription>
+              </Alert>
+            )}
 
-            {step === "credentials" ? (
-              <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+            {step === "email" && !success && (
+              <form onSubmit={handleSendOtp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="flex items-center gap-1.5">
                     <Mail className="h-3.5 w-3.5" />
@@ -247,43 +225,20 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="flex items-center gap-1.5">
-                    <Lock className="h-3.5 w-3.5" />
-                    Password
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                    autoComplete="current-password"
-                  />
-                </div>
-
-                <div className="flex items-center justify-end">
-                  <Link
-                    href="/forgot-password"
-                    className="text-xs text-muted-foreground hover:text-primary hover:underline"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-
-                <Button type="submit" className="w-full" disabled={loading || !email || !password}>
+                <Button type="submit" className="w-full" disabled={loading || !email}>
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Sending OTP…
                     </>
                   ) : (
-                    "Continue"
+                    "Send OTP"
                   )}
                 </Button>
               </form>
-            ) : (
+            )}
+
+            {step === "otp" && (
               <div className="space-y-5">
                 {debugOtp && (
                   <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 px-3 py-2 text-center text-sm">
@@ -315,7 +270,7 @@ export default function LoginPage() {
                 <Button
                   className="w-full"
                   disabled={!otpFilled || loading}
-                  onClick={() => handleOtpSubmit(otp.join(""))}
+                  onClick={handleVerifyOtp}
                 >
                   {loading ? (
                     <>
@@ -323,27 +278,78 @@ export default function LoginPage() {
                       Verifying…
                     </>
                   ) : (
-                    "Verify & Sign In"
+                    <>
+                      Verify OTP
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
                   )}
                 </Button>
-
-                <p className="text-center text-sm text-muted-foreground">
-                  Didn&apos;t receive the code?{" "}
-                  <button
-                    onClick={handleResend}
-                    disabled={resending}
-                    className="font-medium text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {resending ? "Resending…" : "Resend OTP"}
-                  </button>
-                </p>
               </div>
+            )}
+
+            {step === "reset" && (
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password" className="flex items-center gap-1.5">
+                    <Lock className="h-3.5 w-3.5" />
+                    New Password
+                  </Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    disabled={loading}
+                    autoFocus
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password" className="flex items-center gap-1.5">
+                    <Lock className="h-3.5 w-3.5" />
+                    Confirm Password
+                  </Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={loading}
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={loading || !newPassword || !confirmPassword}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Resetting…
+                    </>
+                  ) : (
+                    "Reset Password"
+                  )}
+                </Button>
+              </form>
+            )}
+
+            {success && (
+              <Link href="/login">
+                <Button className="w-full">
+                  Back to Sign In
+                </Button>
+              </Link>
             )}
           </CardContent>
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          Vikas Group ISMS Portal &copy; {new Date().getFullYear()} &nbsp;·&nbsp; Secured with OTP
+          <Link href="/login" className="font-medium text-primary hover:underline">
+            Back to Sign In
+          </Link>
+          &nbsp;·&nbsp; Vikas Group ISMS Portal &copy; {new Date().getFullYear()}
         </p>
       </div>
     </div>

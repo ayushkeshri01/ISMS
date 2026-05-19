@@ -134,11 +134,21 @@ function determineFrequency(controlId: string, label: string, description: strin
   ]
 
   for (const keyword of quarterlyKeywords) {
-    if (text.includes(keyword)) return "QUARTERLY"
+    if (keyword.includes("*")) {
+      const pattern = new RegExp(keyword.replace(/\.\*/g, ".*"), "i")
+      if (pattern.test(text)) return "QUARTERLY"
+    } else if (text.includes(keyword)) {
+      return "QUARTERLY"
+    }
   }
 
   for (const keyword of annualKeywords) {
-    if (text.includes(keyword)) return "ANNUAL"
+    if (keyword.includes("*")) {
+      const pattern = new RegExp(keyword.replace(/\.\*/g, ".*"), "i")
+      if (pattern.test(text)) return "ANNUAL"
+    } else if (text.includes(keyword)) {
+      return "ANNUAL"
+    }
   }
 
   if (category === "annex_a_8") return "QUARTERLY"

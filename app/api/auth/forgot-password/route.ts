@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { sendOtpEmail } from "@/lib/email"
 import { rateLimit } from "@/lib/rate-limit"
@@ -15,26 +14,21 @@ export async function POST(request: Request) {
       )
     }
 
-    const { email, password } = await request.json()
+    const { email } = await request.json()
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
+    if (!email) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 })
     }
 
     const emailNormalized = email.toLowerCase().trim()
 
     const user = await prisma.user.findUnique({
       where: { email: emailNormalized },
-      select: { id: true, email: true, password: true, name: true },
+      select: { id: true, email: true, name: true },
     })
 
     if (!user) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
-    }
-
-    const isValid = await bcrypt.compare(password, user.password)
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
+      return NextResponse.json({ success: true, message: "If the email exists, an OTP has been sent." })
     }
 
     const otp = String(Math.floor(100000 + Math.random() * 900000))

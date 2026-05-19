@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Download, FileArchive } from "lucide-react"
 
 type ExportType = "scores" | "monthly" | "yearly" | "evidence" | "full"
@@ -148,38 +149,36 @@ export function ExportModal({ companies }: ExportModalProps) {
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>Export Type</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={exportType === "full" ? "default" : "outline"}
-                size="sm"
-                className="col-span-2"
-                onClick={() => setExportType("full")}
-              >
-                <FileArchive className="h-4 w-4 mr-2" />
-                All Evidence (ZIP)
-              </Button>
-              <Button
-                variant={exportType === "scores" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setExportType("scores")}
-              >
-                Compliance Scores
-              </Button>
-              <Button
-                variant={exportType === "monthly" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setExportType("monthly")}
-              >
-                Monthly Trend
-              </Button>
-              <Button
-                variant={exportType === "yearly" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setExportType("yearly")}
-              >
-                Yearly Summary
-              </Button>
-            </div>
+            <RadioGroup value={exportType} onValueChange={(v) => setExportType(v as ExportType)} className="gap-2">
+              <div className="flex items-center gap-2 rounded-lg border p-3 has-[[data-state=checked]]:border-primary">
+                <RadioGroupItem value="full" id="export-full" />
+                <Label htmlFor="export-full" className="flex-1 cursor-pointer">
+                  <span className="font-medium">All Evidence (ZIP)</span>
+                  <p className="text-xs text-muted-foreground">Download all evidence files as a ZIP archive</p>
+                </Label>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border p-3 has-[[data-state=checked]]:border-primary">
+                <RadioGroupItem value="scores" id="export-scores" />
+                <Label htmlFor="export-scores" className="flex-1 cursor-pointer">
+                  <span className="font-medium">Compliance Scores</span>
+                  <p className="text-xs text-muted-foreground">Export current compliance scores as CSV</p>
+                </Label>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border p-3 has-[[data-state=checked]]:border-primary">
+                <RadioGroupItem value="monthly" id="export-monthly" />
+                <Label htmlFor="export-monthly" className="flex-1 cursor-pointer">
+                  <span className="font-medium">Monthly Trend</span>
+                  <p className="text-xs text-muted-foreground">Export monthly compliance history as CSV</p>
+                </Label>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border p-3 has-[[data-state=checked]]:border-primary">
+                <RadioGroupItem value="yearly" id="export-yearly" />
+                <Label htmlFor="export-yearly" className="flex-1 cursor-pointer">
+                  <span className="font-medium">Yearly Summary</span>
+                  <p className="text-xs text-muted-foreground">Export yearly compliance summary as CSV</p>
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
           
           <div className="space-y-2">

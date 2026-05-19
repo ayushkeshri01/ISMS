@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { Upload } from "lucide-react"
+import { toast } from "sonner"
 import { EvidenceUpload } from "./evidence-upload"
 import { CONTROL_CATEGORIES } from "@/lib/constants"
 import { cn } from "@/lib/utils"
@@ -73,7 +74,7 @@ export function ControlAccordion({ controls, companyKey, userRole }: Props) {
   const [pendingControls, setPendingControls] = useState<Set<string>>(new Set())
   
   const isWriter = useMemo(() =>
-    ['CIO', 'IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'ADMIN_FACILITIES', 'LEGAL', 'IT_EXECUTIVE', 'HR_EXECUTIVE'].includes(userRole),
+    ['CIO', 'IT_MANAGER', 'STQM_MANAGER', 'HR_MANAGER', 'IT_EXECUTIVE', 'HR_EXECUTIVE'].includes(userRole),
     [userRole]
   )
   
@@ -91,8 +92,6 @@ export function ControlAccordion({ controls, companyKey, userRole }: Props) {
     )
     
     try {
-      console.log('[StatusChange] Sending PATCH:', { companyKey, controlId, newStatus })
-      
       const res = await fetch(`/api/controls`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -101,14 +100,13 @@ export function ControlAccordion({ controls, companyKey, userRole }: Props) {
       })
       
       const data = await res.json()
-      console.log('[StatusChange] Response:', { status: res.status, data })
-      
+
       if (!res.ok) {
         // Revert optimistic update on failure
         setLocalControls(prev =>
           prev.map(c => c.controlId === controlId ? { ...c, status: currentControl?.status || 'NOT_STARTED' } : c)
         )
-        alert(`Failed: ${data.error || 'Unknown error'} (status ${res.status})`)
+        toast.error(`Failed: ${data.error || 'Unknown error'} (status ${res.status})`)
       }
     } catch (err) {
       console.error('[StatusChange] Network error:', err)
@@ -116,7 +114,7 @@ export function ControlAccordion({ controls, companyKey, userRole }: Props) {
       setLocalControls(prev =>
         prev.map(c => c.controlId === controlId ? { ...c, status: currentControl?.status || 'NOT_STARTED' } : c)
       )
-      alert('Network error: Could not update status. Check console for details.')
+      toast.error('Network error: Could not update status. Check console for details.')
     } finally {
       setPendingControls(prev => {
         const next = new Set(prev)
@@ -174,7 +172,7 @@ export function ControlAccordion({ controls, companyKey, userRole }: Props) {
   }, [controls])
   
   return (
-    <Accordion defaultValue={[]} className="space-y-4">
+    <Accordion defaultValue={["clauses"]} className="space-y-4">
       {Object.entries(groupedControls).map(([category, categoryControls]) => {
         const lookupKey = category.replace('annex_a_', 'ANNEX_A_').toUpperCase() as keyof typeof CONTROL_CATEGORIES
         const categoryInfo = CONTROL_CATEGORIES[lookupKey]

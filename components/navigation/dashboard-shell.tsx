@@ -30,15 +30,23 @@ export function DashboardShell({
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none"
+      >
+        Skip to main content
+      </a>
+      
 
       {/* ── Mobile overlay backdrop ─────────────────────────────────────── */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className={cn(
+          "fixed inset-0 z-30 bg-black/50 md:hidden transition-opacity duration-300",
+          mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+        onClick={() => setMobileOpen(false)}
+        aria-hidden="true"
+      />
 
       {/* ── Sidebar ────────────────────────────────────────────────────── */}
       {/* On mobile: fixed overlay, slides from left.
@@ -75,7 +83,7 @@ export function DashboardShell({
           onMobileMenuToggle={() => setMobileOpen((o) => !o)}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto p-4 md:p-6 outline-none">
           {children}
         </main>
       </div>

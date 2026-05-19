@@ -16,20 +16,27 @@ export async function GET(request: NextRequest) {
     if (!['scores', 'history'].includes(type)) {
       return NextResponse.json({ error: "Invalid report type" }, { status: 400 })
     }
+
+    // Resolve companyKey: default to user's own company if not provided
+    const resolvedCompanyKey = companyKey || session.user.companyKey
+
+    if (!resolvedCompanyKey && session.user.role !== 'CIO') {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
     
     // Validate companyKey if provided
-    if (companyKey && !COMPANY_KEYS.includes(companyKey as (typeof COMPANY_KEYS)[number])) {
+    if (resolvedCompanyKey && !COMPANY_KEYS.includes(resolvedCompanyKey as (typeof COMPANY_KEYS)[number])) {
       return NextResponse.json({ error: "Invalid company" }, { status: 400 })
     }
     
     // Check authorization
-    if (companyKey && session.user.companyKey !== companyKey && session.user.role !== 'CIO') {
+    if (resolvedCompanyKey && session.user.companyKey !== resolvedCompanyKey && session.user.role !== 'CIO') {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     if (type === 'scores') {
       const companies = await prisma.company.findMany({
-        where: companyKey ? { key: companyKey } : {},
+        where: resolvedCompanyKey ? { key: resolvedCompanyKey } : {},
         select: {
           id: true,
           key: true,
@@ -63,7 +70,7 @@ export async function GET(request: NextRequest) {
     
     if (type === 'history') {
       const companies = await prisma.company.findMany({
-        where: companyKey ? { key: companyKey } : {},
+        where: resolvedCompanyKey ? { key: resolvedCompanyKey } : {},
         include: {
           complianceHistory: {
             orderBy: [{ year: 'desc' }, { month: 'desc' }],

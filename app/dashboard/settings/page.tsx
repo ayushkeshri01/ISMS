@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, CheckCircle2, Server, Lock, Mail, Loader2, Eye, EyeOff } from "lucide-react"
+import { AlertCircle, CheckCircle2, Server, Lock, Mail, Loader2, Eye, EyeOff, Shield } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export default function SettingsPage() {
   const { data: session, status } = useSession()
@@ -29,7 +30,7 @@ export default function SettingsPage() {
     if (status === "unauthenticated") {
       redirect("/login")
     }
-    if (status === "authenticated" && session?.user?.access !== "write") {
+    if (status === "authenticated" && session?.user?.role !== "CIO") {
       redirect("/dashboard/master")
     }
   }, [status, session])
@@ -189,14 +190,13 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Label htmlFor="smtp_secure" className="flex items-center gap-1.5">
-                <input
-                  id="smtp_secure"
-                  type="checkbox"
-                  checked={smtpSecure === "true"}
-                  onChange={(e) => setSmtpSecure(e.target.checked ? "true" : "false")}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
+              <Checkbox
+                id="smtp_secure"
+                checked={smtpSecure === "true"}
+                onCheckedChange={(checked) => setSmtpSecure(checked ? "true" : "false")}
+              />
+              <Label htmlFor="smtp_secure" className="flex items-center gap-1.5 cursor-pointer">
+                <Shield className="h-3.5 w-3.5" />
                 Use SSL/TLS (port 465)
               </Label>
             </div>
